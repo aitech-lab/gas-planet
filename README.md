@@ -1,3 +1,3 @@
 # gas-planet
 
-!(image)[screenshoot.png]
+![image](screenshoot.png)
