@@ -17,10 +17,17 @@
 		overflow: hidden;
 	}
 
-	#info {
+	#input {
 		position: absolute;
-		top: 0px; width: 100%;
+		top: 20px;
+		width: 50%;
+		left: 25%;
 		padding: 5px;
+		font-size:32px;
+		background: black;
+		border: 1px solid gray;
+		color: gray;
+		text-align: center;
 	}
 
 	a {
@@ -92,8 +99,7 @@ void main( void ) {
     vec3 reflectDir = reflect(-lightDir, normal);
     vec3 viewDir    = normalize(-vPos);
 
-    float idf        = float(id);
-    float ids        = sin(idf);
+    float idf        = sin(float(id));
     float atmosphere = pow(1.0-dot(normal,viewDir),3.2)/4.0;
     float lambertian = max(dot(lightDir,normal), 0.0);
     float specular = 0.0;
@@ -105,10 +111,11 @@ void main( void ) {
 
     vec2 uv = vUv;
     uv.y = sin(uv.y+idf);
-    uv.x = sin(uv.y*10.0+time/(2.0+ids)+idf)*2.0 + uv.x;
+    uv.x = sin(uv.y*10.0+time/(2.0+idf)+idf)*2.0 + uv.x;
     //vec3 rgb = texture2D(texture, uv).rgb;
 	vec3 hsv = rgb2hsv(texture2D(texture, uv).rgb);
     hsv.x = sin(hsv.x*idf*10.0);
+    hsv.y = hsv.y + idf;
     vec3 rgb = hsv2rgb(hsv);
     gl_FragColor = vec4(ambientColor*rgb +
                         lambertian*rgb +
@@ -139,6 +146,7 @@ void main() {
 
 
 <script>
+
 
 if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var container, stats;
@@ -174,7 +182,7 @@ function init() {
 			vertexShader  : document.getElementById( 'planet.vert' ).textContent,
 			fragmentShader: document.getElementById( 'planet.frag' ).textContent
 		} );
-
+        materials.push(material);
 		var mesh = new THREE.Mesh( geometry, material );
 		mesh.position.x = i - 1.5;
 		mesh.position.y = i % 2 - 0.5;
@@ -219,6 +227,21 @@ function render() {
 	renderer.render( scene, camera );
 }
 
+String.prototype.hashCode = function() {
+  return this.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+};
+
+function input(val) {
+    hash = val.hashCode();
+    for(var i in materials) {
+        var m = materials[i];
+        m.uniforms.id.value = hash+i*100;
+        console.log(hash);
+    }
+}
+
 </script>
+
+<input id="input" onkeyup="input(this.value)"/>
 
 </body></html>
