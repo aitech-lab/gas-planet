@@ -58,8 +58,9 @@ varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vPos;
 
-const vec3 lightPos     = vec3(100.0, 100.0, 10.0);
-const vec3 ambientColor = vec3(0.05, 0.1, 0.1);
+const vec3 lightPos     = vec3(100.0, 100.0, 100.0);
+
+const vec3 ambientColor = vec3(0.05, 0.2, 0.2);
 const vec3 diffuseColor = vec3(0.5, 0.0, 0.0);
 const vec3 specColor    = vec3(0.1, 0.2, 0.3);
 
@@ -94,6 +95,7 @@ vec3 hsv2rgb(vec3 c) {
 
 void main( void ) {
 
+    // расчет освещения
     vec3 normal     = normalize(vNormal);
     vec3 lightDir   = normalize(lightPos - vPos);
     vec3 reflectDir = reflect(-lightDir, normal);
@@ -110,13 +112,11 @@ void main( void ) {
     }
 
     vec2 uv = vUv;
-    uv.y = sin(uv.y+idf);
-    uv.x = sin(uv.y*10.0+time/(2.0+idf)+idf)*2.0 + uv.x;
-    //vec3 rgb = texture2D(texture, uv).rgb;
-	vec3 hsv = rgb2hsv(texture2D(texture, uv).rgb);
-    hsv.x = sin(hsv.x*idf*10.0);
-    hsv.y = hsv.y + idf;
-    vec3 rgb = hsv2rgb(hsv);
+    uv.y = sin(uv.y*10.0*idf+time/10.0);
+    uv.x = 0.0;
+
+    vec3 rgb = texture2D(texture, uv).rgb;
+
     gl_FragColor = vec4(ambientColor*rgb +
                         lambertian*rgb +
                         specular*specColor+
@@ -152,17 +152,29 @@ if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var container, stats;
 var camera, scene, renderer, clock;
 
-var planet_radius = 0.7;
+var planet;
+var planet_radius = 0.8;
 var planet_details = 50;
 
 var materials = []
+var materials_cnt = 8;
 var time = {value:1.0};
 
 init();
 animate();
 
+// ca
+var cvs, ctx;
+function init_planet() {
+    cvs = document.createElement('canvas');
+    ctx = canvas.getContext('2d');
+    ctx.clearColor()
+    document.body.prepend(cvs);
+}
+
 
 function init() {
+
 
 	container = document.getElementById( 'container' );
 	camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 3000 );
@@ -171,26 +183,28 @@ function init() {
 	clock = new THREE.Clock();
 
 	var geometry = new THREE.SphereBufferGeometry(planet_radius, planet_details, planet_details );
-	var texture  = { value: new THREE.TextureLoader().load('disturb.jpg' )}
-	texture.value.wrapS = texture.value.wrapT = THREE.RepeatWrapping;
-
-    // Переменные шейдера
-    var uniforms = {
-	    id:      { value: 0},
-		time:    time,
-		texture: texture
-	};
-	var material = new THREE.ShaderMaterial( {
-		uniforms: uniforms,
-		vertexShader  : document.getElementById( 'planet.vert' ).textContent,
-		fragmentShader: document.getElementById( 'planet.frag' ).textContent
-	} );
-    materials.push(material);
+	for(var i=1; i<=materials_cnt; i++) {
+    	var texture  = { value: new THREE.TextureLoader().load('palettes/pal_0'+i+'.png' )}
+    	texture.value.wrapS = texture.value.wrapT = THREE.RepeatWrapping;
+        // Переменные шейдера
+        var uniforms = {
+    	    id:      { value: 1.0},
+    		time:    time,
+    		texture: texture
+    	};
+    	var material = new THREE.ShaderMaterial( {
+    		uniforms: uniforms,
+    		vertexShader  : document.getElementById( 'planet.vert' ).textContent,
+    		fragmentShader: document.getElementById( 'planet.frag' ).textContent
+    	} );
+        materials.push(material);
+    }
     
-	var mesh = new THREE.Mesh( geometry, material );
-	// mesh.position.x = 0;
-	// mesh.position.y = 0;
-	scene.add( mesh );
+	planet = new THREE.Mesh( geometry, materials[0] );
+	// planet.position.x = 0;
+	// planet.position.y = 0;
+    planet.rotation.x = 3.141/4.0;
+	scene.add( planet );
 
 	renderer = new THREE.WebGLRenderer();
 	renderer.setPixelRatio( window.devicePixelRatio );
@@ -225,7 +239,7 @@ function render() {
 	for ( var i = 0; i < scene.children.length; i ++ ) {
 		var object = scene.children[ i ];
 		object.rotation.y += delta * 0.5 * ( i % 2 ? 1 : -1 );
-		object.rotation.x += delta * 0.5 * ( i % 2 ? -1 : 1 );
+		//object.rotation.x += delta * 0.5 * ( i % 2 ? -1 : 1 );
 	}
 	renderer.render( scene, camera );
 }
@@ -235,12 +249,10 @@ String.prototype.hashCode = function() {
 };
 
 function input(val) {
-    hash = val.hashCode();
-    for(var i in materials) {
-        var m = materials[i];
-        m.uniforms.id.value = hash+i*100;
-        console.log(hash);
-    }
+    hash = Math.abs(val.hashCode());
+    m = materials[hash%materials_cnt];
+    m.uniforms.id.value = hash;
+    planet.material = m
 }
 
 </script>
