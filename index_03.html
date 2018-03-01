@@ -161,7 +161,7 @@ void main( void ) {
 
     vec3 rgb1 = texture2D(texture, a.xy*2.0).rgb;
     vec3 rgb2 = texture2D(texture, b.xy*2.0).rgb;
-    color = mix(rgb1, rgb2, clamp((f*f),0.2, 1.0));
+    color = mix(rgb1, rgb2, clamp((f*f),0.9, 1.0));
     // color = mix(color, vec3(0.413,0.524,0.880), clamp(length(c.x),0.480, 0.92));
 
     vec3 rgb = vec3(f*1.9*color);
