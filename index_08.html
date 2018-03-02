@@ -71,6 +71,7 @@ uniform vec3 cnt_col1;
 uniform vec3 cnt_col2;
 uniform vec3 cnt_col3;
 uniform vec3 spec_col;
+uniform vec3 amb_col;
 
 uniform sampler2D texture;
 uniform sampler2D velocities;
@@ -81,9 +82,7 @@ varying vec3 vPos;
 
 const vec3 lightPos     = vec3(-100.0, 100.0, 100.0);
 
-const vec3 ambientColor = vec3(0.0, 0.1, 0.05);
 const vec3 diffuseColor = vec3(0.3, 0.0, 0.0);
-
 
 float random (in vec2 _st) {
     return fract(sin(dot(_st.xy, vec2(12.9898,78.233))) * 43758.54531237);
@@ -185,7 +184,7 @@ void main( void ) {
 
 
     vec3 rgb = vec3(f*2.5*color);
-    rgb = ambientColor*rgb +
+    rgb = amb_col*rgb +
           lambertian*rgb +
           specular*spec_col+
           atmosphere;
@@ -256,7 +255,8 @@ var params = {
    cnt_col1  : [220,200,100],
    cnt_col2  : [ 70, 90,180],
    cnt_col3  : [250,250,180],
-   spec_col  : [0.4*255.0,0.2*255.0,0.2*255.0],
+   spec_col  : [100, 80, 60],
+   amb_col   : [ 20, 40, 20],
 
 };
 
@@ -290,6 +290,9 @@ function init_gui() {
 
     var spec_col = function (val) { current_material.uniforms.spec_col.value = p2u("spec_col") };
     gui.addColor(params, "spec_col").onChange(spec_col);
+    
+    var amb_col = function (val) { current_material.uniforms.amb_col.value = p2u("amb_col") };
+    gui.addColor(params, "amb_col").onChange(amb_col);
     
     
 }
@@ -329,6 +332,7 @@ function init() {
     	    cnt_col2 :  { type: "v3", value: p2u("cnt_col2")   },
     	    cnt_col3 :  { type: "v3", value: p2u("cnt_col3")   },
     	    spec_col :  { type: "v3", value: p2u("spec_col")   },
+    	    amb_col  :  { type: "v3", value: p2u("amb_col" )   },
 
             time:       time,
     		texture:    texture,
