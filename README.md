@@ -6,5 +6,6 @@
 - https://ailove-lab.github.io/gas-planet/index_03.html
 - https://ailove-lab.github.io/gas-planet/index_04.html
 - https://ailove-lab.github.io/gas-planet/index_05.html
+- https://ailove-lab.github.io/gas-planet/index_06.html
 
 ![image](screenshoot.png)
