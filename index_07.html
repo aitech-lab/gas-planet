@@ -70,7 +70,7 @@ varying vec3 vPos;
 const vec3 lightPos     = vec3(-100.0, 100.0, 100.0);
 const vec3 specColor    = vec3(0.4, 0.1, 0.2);
 
-const vec3 ambientColor = vec3(0.0, 0.2, 0.1);
+const vec3 ambientColor = vec3(0.0, 0.1, 0.05);
 const vec3 diffuseColor = vec3(0.3, 0.0, 0.0);
 
 
@@ -132,14 +132,14 @@ void main( void ) {
     }
     
     // atmoshpere
-    float atm = clamp(pow(1.0-dot(normal,viewDir),0.4)*normal.y*normal.x, 0.0, 1.0);
-    vec3 atmosphere = vec3(atm, atm, atm/2.0)/2.0;
-
-    atm = clamp(pow(1.0-dot(normal,viewDir),1.0)*(normal.x-normal.y), 0.0, 1.0);
-    atmosphere += vec3(atm/2.0,atm, atm/1.5)/2.0;
-
+    float p = 2.0;
+    float k = 1.5;
+    float atm = clamp(pow(1.0-dot(normal,viewDir),0.4*k)*normal.y*normal.x, 0.0, 1.0);
+    vec3 atmosphere = vec3(atm, atm, atm/2.0)/p;
+    atm = clamp(pow(1.0-dot(normal,viewDir),1.0*k)*(normal.x-normal.y), 0.0, 1.0);
+    atmosphere += vec3(atm/2.0,atm, atm/1.5*k)/p;
     atm = clamp(pow(1.0-dot(normal,viewDir),1.7)*(normal.x+normal.y), 0.0, 1.0);
-    atmosphere += vec3(atm*1.5, atm*1.5, atm)/2.0;
+    atmosphere += vec3(atm*1.5, atm*1.5, atm)/p;
 
     // turbulences
 
