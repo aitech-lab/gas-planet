@@ -217,8 +217,6 @@ var time = {value:1.0};
 String.prototype.hashCode = function() {
   return this.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
 };
-
-function rnd(r){ return Math.random()*r };
 var seed = 1;
 function rnd(r) {
     var x = Math.sin(seed++) * 10000;
