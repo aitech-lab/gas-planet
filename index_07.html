@@ -67,11 +67,11 @@ varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vPos;
 
-const vec3 lightPos     = vec3(100.0, 100.0, 100.0);
+const vec3 lightPos     = vec3(-100.0, 100.0, 100.0);
+const vec3 specColor    = vec3(0.4, 0.1, 0.2);
 
-const vec3 ambientColor = vec3(0.05, 0.2, 0.2);
-const vec3 diffuseColor = vec3(0.5, 0.0, 0.0);
-const vec3 specColor    = vec3(0.1, 0.2, 0.3);
+const vec3 ambientColor = vec3(0.0, 0.2, 0.1);
+const vec3 diffuseColor = vec3(0.3, 0.0, 0.0);
 
 
 float random (in vec2 _st) {
@@ -133,7 +133,7 @@ void main( void ) {
     
     // atmoshpere
     float atm = clamp(pow(1.0-dot(normal,viewDir),0.4)*normal.y*normal.x, 0.0, 1.0);
-    vec3 atmosphere = vec3(atm, atm, atm/2.0);
+    vec3 atmosphere = vec3(atm, atm, atm/2.0)/2.0;
 
     atm = clamp(pow(1.0-dot(normal,viewDir),1.0)*(normal.x-normal.y), 0.0, 1.0);
     atmosphere += vec3(atm/2.0,atm, atm/1.5)/2.0;
