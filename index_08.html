@@ -64,6 +64,7 @@ uniform float time;
 
 uniform float contrast; 
 uniform float brightness;
+uniform float equator;
 
 uniform float cnt_width;
 uniform float cnt_alpha;
@@ -153,7 +154,7 @@ void main( void ) {
     // turbulences
 
     float e = sin(vUv.y*PI);
-    e = pow(e, 2.0);
+    e = pow(e, equator);
     vec3 vel = texture2D(velocities, vUv).rgb;
     
     vec2 uv = vUv;
@@ -250,6 +251,7 @@ function rnd(r) {
 var params = {
    brightness: 0.0,
    octaves   : 5,
+   equator   : 2.0,
    contrast  : 1.2,
    cnt_width : 1.0,
    cnt_alpha : 0.5,
@@ -270,6 +272,9 @@ function init_gui() {
 
     var octaves = function (val) { current_material.uniforms.octaves.value = val};
     gui.add(params, "octaves", 1, 8, 1).onChange(octaves);
+
+    var equator = function (val) { current_material.uniforms.equator.value = val};
+    gui.add(params, "equator", 0.00, 10.0).onChange(equator);
 
     var contrast = function (val) { current_material.uniforms.contrast.value = val};
     gui.add(params, "contrast", 0.1, 2.0).onChange(contrast);
@@ -328,7 +333,8 @@ function init() {
         var uniforms = {
     	    id:         { value: 1.0},
 
-    	    octaves:    { type: "i" , value: params.octaves   },
+    	    octaves:    { type: "i" , value: params.octaves    },
+    	    equator:    { type: "f" , value: params.equator    },
     	    contrast:   { type: "f" , value: params.contrast   },
     	    brightness: { type: "f" , value: params.brightness },
     	    cnt_width:  { type: "f" , value: params.cnt_width  },
