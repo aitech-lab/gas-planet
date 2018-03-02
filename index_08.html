@@ -66,6 +66,8 @@ uniform float brightness;
 uniform float cnt_width;
 uniform float cnt_alpha;
 
+uniform vec3 specColor;
+
 uniform sampler2D texture;
 uniform sampler2D velocities;
 
@@ -74,7 +76,6 @@ varying vec3 vNormal;
 varying vec3 vPos;
 
 const vec3 lightPos     = vec3(-100.0, 100.0, 100.0);
-const vec3 specColor    = vec3(0.4, 0.1, 0.2);
 
 const vec3 ambientColor = vec3(0.0, 0.1, 0.05);
 const vec3 diffuseColor = vec3(0.3, 0.0, 0.0);
@@ -246,8 +247,13 @@ var params = {
    contrast  : 1.2,
    cnt_width : 1.0,
    cnt_alpha : 0.5,
+   spec      : [0.4*255.0,0.2*255.0,0.2*255.0],
 
 };
+
+function p2u(p) {
+   return new THREE.Vector3( params[p][0]/255.0, params[p][1]/255.0, params[p][2]/255.0);
+}
 
 function init_gui() {
     var gui = new dat.GUI();
@@ -258,11 +264,15 @@ function init_gui() {
     var brightness = function (val) { current_material.uniforms.brightness.value = val};
     gui.add(params, "brightness", -2.0, 2.0).onChange(brightness);
 
-   var cnt_width = function (val) { current_material.uniforms.cnt_width.value = val};
+    var cnt_width = function (val) { current_material.uniforms.cnt_width.value = val};
     gui.add(params, "cnt_width", 0.1, 8.0).onChange(cnt_width);
 
     var cnt_alpha = function (val) { current_material.uniforms.cnt_alpha.value = val};
     gui.add(params, "cnt_alpha", 0.1, 2.0).onChange(cnt_alpha);
+
+    var spec = function (val) { current_material.uniforms.specColor.value = p2u("spec") };
+    gui.addColor(params, "spec").onChange(spec);
+    
 }
 
 
@@ -286,16 +296,18 @@ function init() {
 
     	var texture  = { value: new THREE.TextureLoader().load('palettes/pal_0'+i+'.png' )}
     	texture.value.wrapS = texture.value.wrapT = THREE.RepeatWrapping;
-    	
+
+        
         // Переменные шейдера
         var uniforms = {
     	    id:         { value: 1.0},
 
-    	    contrast:   { value: params.contrast   },
-    	    brightness: { value: params.brightness },
-    	    cnt_width:  { value: params.cnt_width  },
-    	    cnt_alpha:  { value: params.cnt_alpha  },
-    	    
+    	    contrast:   { type: "f" , value: params.contrast   },
+    	    brightness: { type: "f" , value: params.brightness },
+    	    cnt_width:  { type: "f" , value: params.cnt_width  },
+    	    cnt_alpha:  { type: "f" , value: params.cnt_alpha  },
+    	    specColor:  { type: "v3", value: p2u("spec")       },
+
     		time:       time,
     		texture:    texture,
     		velocities: velocities
