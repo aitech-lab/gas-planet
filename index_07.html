@@ -174,14 +174,12 @@ void main( void ) {
     // color = mix(color, vec3(0.413,0.524,0.880), clamp(length(c.x),0.480, 0.92));
 
     vec3 rgb = vec3(f*2.5*color);
-    
-    //vec3 rgb = vec3(c.x);
-    
-
-    gl_FragColor = vec4(ambientColor*rgb +
-                        lambertian*rgb +
-                        specular*specColor+
-                        atmosphere,1.0);
+    rgb = ambientColor*rgb +
+          lambertian*rgb +
+          specular*specColor+
+          atmosphere;
+    rgb = rgb*1.2-0.15;
+    gl_FragColor = vec4(rgb,1.0);
                         
 }
 </script>
