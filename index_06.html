@@ -96,7 +96,7 @@ float noise (in vec2 _st) {
 }
 
 
-#define NUM_OCTAVES 3
+#define NUM_OCTAVES 5
 
 float fbm ( in vec2 _st) {
     float v = 0.0;
@@ -122,7 +122,7 @@ void main( void ) {
     vec3 reflectDir = reflect(-lightDir, normal);
     vec3 viewDir    = normalize(-vPos);
 
-    float idf        = sin(float(id));
+    float idf        = 0.5+sin(float(id))/2.0;
     float atmosphere = pow(1.0-dot(normal,viewDir),3.2)/4.0;
     float lambertian = max(dot(lightDir,normal), 0.0);
     float specular = 0.0;
@@ -136,7 +136,7 @@ void main( void ) {
     vec3 vel = texture2D(velocities, vUv).rgb;
     
     vec2 uv = vUv;
-    uv.x = 0.5+sin((uv.x-time*0.01)*PI*2.0)/2.0;
+    uv.x = 0.5+sin((uv.x-time*0.01+idf)*TWO_PI)/2.0;
     vec2 st = (uv*e +vel.x*e - 0.5);
     st *= 3.5;
     
@@ -146,22 +146,23 @@ void main( void ) {
     vec2 c = vec2(60.,800.);
     
     a.x = fbm( st            );
-    a.y = fbm( st + vec2(1.0));
+    a.y = fbm( st + vec2(idf));
     
-    b.x = fbm( st + 4.*a);
+    b.x = fbm( st + idf*4.0*a);
     b.y = fbm( st       );
 
-    c.x = fbm( st + 7.0*b + vec2(10.7, 0.2)+ 0.215*time);
-    c.y = fbm( st + 3.0*b + vec2( 0.3,12.8)+ 0.160*time);
+    c.x = fbm( st + idf*7.0*b + vec2(10.7, 0.2)+ idf/5.0*time);
+    c.y = fbm( st + idf*3.0*b + vec2( 0.3,12.8)+ idf/9.0*time);
 
-    float f = fbm(st+b+c);
+    float f = fbm(st*idf*2.0+b+c);
 
-    vec3 rgb1 = texture2D(texture, a.xy*2.0).rgb;
-    vec3 rgb2 = texture2D(texture, b.xy*2.0).rgb;
-    color = mix(rgb1, rgb2, clamp((f*f),e, 1.0));
+    vec3 rgb1 = texture2D(texture, a.xy*8.0*idf).rgb;
+    vec3 rgb2 = texture2D(texture, b.xy*8.0*idf).rgb;
+    color = mix(rgb1, rgb2, clamp((f*f), 1.0 - e, 1.0));
     // color = mix(color, vec3(0.413,0.524,0.880), clamp(length(c.x),0.480, 0.92));
 
     vec3 rgb = vec3(f*2.5*color);
+    
     //vec3 rgb = vec3(c.x);
     
 
@@ -212,6 +213,17 @@ var velocities;
 var materials = []
 var materials_cnt = 8;
 var time = {value:1.0};
+
+String.prototype.hashCode = function() {
+  return this.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+};
+
+function rnd(r){ return Math.random()*r };
+var seed = 1;
+function rnd(r) {
+    var x = Math.sin(seed++) * 10000;
+    return (x - Math.floor(x)) * r;
+}
 
 init();
 animate();
@@ -281,7 +293,6 @@ function init_planet_texture() {
     //document.body.prepend(cvs);
 }
 
-function rnd(r){ return Math.random()*r };
 
 function generate_planet_texture() {
     // Основной фон
@@ -362,12 +373,11 @@ function render() {
 	renderer.render( scene, camera );
 }
 
-String.prototype.hashCode = function() {
-  return this.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
-};
 
 function input(val) {
+    console.log(val);
     hash = Math.abs(val.hashCode());
+    seed = hash;
     m = materials[hash%materials_cnt];
     m.uniforms.id.value = hash;
     generate_planet_texture();

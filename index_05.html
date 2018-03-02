@@ -132,12 +132,12 @@ void main( void ) {
        specular = pow(specAngle, 4.0);
     }
     float e = sin(vUv.y*PI);
-    e = pow(e, 8.0);
+    e = pow(e, 3.0);
     vec3 vel = texture2D(velocities, vUv).rgb;
     
     
     vec2 uv = vUv;
-    uv.x = 0.5+sin((uv.x-time*0.01)*PI*2.0)/2.0;
+    uv.x = 0.5+sin((uv.x-time*0.01 + idf)*TWO_PI)/2.0;
     vec2 st = (uv*e +vel.x*e - 0.5);
     st *= 3.5;
     
@@ -214,12 +214,23 @@ var materials = []
 var materials_cnt = 8;
 var time = {value:1.0};
 
+var seed = 1;
+function rnd(r) {
+    var x = Math.sin(seed++) * 10000;
+    return (x - Math.floor(x)) * r;
+}
+
+String.prototype.hashCode = function() {
+  return this.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+};
+
 init();
 animate();
 
 function init() {
 
     init_planet_texture();
+    seed = 1;
     generate_planet_texture();
 
 	container = document.getElementById( 'container' );
@@ -282,7 +293,7 @@ function init_planet_texture() {
     //document.body.prepend(cvs);
 }
 
-function rnd(r){ return Math.random()*r };
+// function rnd(r){ return Math.random()*r };
 
 function generate_planet_texture() {
     // Основной фон
@@ -363,12 +374,10 @@ function render() {
 	renderer.render( scene, camera );
 }
 
-String.prototype.hashCode = function() {
-  return this.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
-};
 
 function input(val) {
     hash = Math.abs(val.hashCode());
+    seed = hash;
     m = materials[hash%materials_cnt];
     m.uniforms.id.value = hash;
     generate_planet_texture();
