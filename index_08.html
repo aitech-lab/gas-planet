@@ -59,6 +59,7 @@
 precision mediump float; 
 
 uniform int   id;
+uniform int   octaves;
 uniform float time;
 
 uniform float contrast; 
@@ -106,8 +107,6 @@ float noise (in vec2 _st) {
 }
 
 
-#define NUM_OCTAVES 5
-
 float fbm ( in vec2 _st) {
     float v = 0.0;
     float a = 0.5;
@@ -115,10 +114,11 @@ float fbm ( in vec2 _st) {
     // Rotate to reduce axial bias
     mat2 rot = mat2( cos(0.5), sin(0.5), 
                     -sin(0.5), cos(0.50));
-    for (int i = 0; i < NUM_OCTAVES; ++i) {
+    for (int i = 0; i < 10; ++i) {
         v += a * noise(_st);
         _st = rot * _st * 2.2 + shift;
         a *= 0.5;
+        if(i>=octaves) break;
     }
     return v;
 }
@@ -249,6 +249,7 @@ function rnd(r) {
 
 var params = {
    brightness: 0.0,
+   octaves   : 5,
    contrast  : 1.2,
    cnt_width : 1.0,
    cnt_alpha : 0.5,
@@ -266,7 +267,10 @@ function p2u(p) {
 
 function init_gui() {
     var gui = new dat.GUI();
-    
+
+    var octaves = function (val) { current_material.uniforms.octaves.value = val};
+    gui.add(params, "octaves", 1, 8, 1).onChange(octaves);
+
     var contrast = function (val) { current_material.uniforms.contrast.value = val};
     gui.add(params, "contrast", 0.1, 2.0).onChange(contrast);
     
@@ -324,6 +328,7 @@ function init() {
         var uniforms = {
     	    id:         { value: 1.0},
 
+    	    octaves:    { type: "i" , value: params.octaves   },
     	    contrast:   { type: "f" , value: params.contrast   },
     	    brightness: { type: "f" , value: params.brightness },
     	    cnt_width:  { type: "f" , value: params.cnt_width  },
