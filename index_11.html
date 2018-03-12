@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Gas planet</title>
+<title>Gas sun</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style>
@@ -32,7 +32,7 @@
 		text-align: center;
 	}
 
-	#planet_texture {
+	#sun_texture {
 		position: absolute;
 		bottom: 20px;
 	}
@@ -53,7 +53,7 @@
 
 <!-- PLANET -->
 
-<script id="planet.frag" type="x-shader/x-fragment">
+<script id="sun.frag" type="x-shader/x-fragment">
 
 #define PI     3.14159265359
 #define TWO_PI 6.28318530718
@@ -69,10 +69,7 @@ varying vec3 vNormal;
 varying vec3 vPos;
 
 // Fork of the main sequence star by flight404: https://www.shadertoy.com/view/4dXGR4
-// Without the music of course.
 // based on https://www.shadertoy.com/view/lsf3RH by
-// trisomie21 (THANKS!)
-// My apologies for the ugly code.
 
 float snoise(vec3 uv, float res) {
 
@@ -102,11 +99,11 @@ void main() {
     float radius = 0.24 + brightness * 0.2;
     float invRadius = 1.0/radius;
 
-    vec3 orange = vec3( 0.8, 0.65, 0.3 );
+    vec3 orange    = vec3( 0.8, 0.65, 0.3 );
     vec3 orangeRed = vec3( 0.8, 0.35, 0.1 );
     float t = time * 0.1;
-    float aspect = 1.0; // iResolution.x/iResolution.y;
-    vec2 uv = vUv; //gl_FragCoord.xy / iResolution.xy;
+    float aspect = 1.0;
+    vec2 uv = vUv;
     vec2 p = -0.5 + uv;
 
     p.x *= aspect;
@@ -117,10 +114,10 @@ void main() {
     float dist= length(p);
     vec3 coord= vec3( angle, dist, t * 0.1 );
 
-    float newTime1= abs( snoise( coord + vec3( 0.0, -t * ( 0.35 + brightness * 0.001 ), t * 0.015 ), 15.0 ) );
-    float newTime2= abs( snoise( coord + vec3( 0.0, -t * ( 0.15 + brightness * 0.001 ), t * 0.015 ), 45.0 ) );
+    float newTime1 = abs( snoise( coord + vec3( 0.0, -t * ( 0.35 + brightness * 0.001 ), t * 0.015 ), 15.0 ) );
+    float newTime2 = abs( snoise( coord + vec3( 0.0, -t * ( 0.15 + brightness * 0.001 ), t * 0.015 ), 45.0 ) );
 
-    for( int i=1; i<=7; i++ ){
+    for( int i=1; i<=4; i++ ){
        float power = pow( 2.0, float(i + 1) );
        fVal1 += ( 0.5 / power ) * snoise( coord + vec3( 0.0, -t, t * 0.2 ), ( power * ( 10.0 ) * ( newTime1 + 1.0 ) ) );
        fVal2 += ( 0.5 / power ) * snoise( coord + vec3( 0.0, -t, t * 0.2 ), ( power * ( 25.0 ) * ( newTime2 + 1.0 ) ) );
@@ -140,20 +137,19 @@ void main() {
     float r = dot(sp,sp);
     float f = (1.0-sqrt(abs(1.0-r)))/(r) + brightness * 0.5;
     if( dist < radius ){
-        corona*= pow( dist * invRadius, 24.0 );
+        corona *= pow( dist * invRadius, 24.0 );
         vec2 newUv;
-        newUv.x = sp.x*f;
-        newUv.y = sp.y*f;
+        newUv.x = sp.x * f;
+        newUv.y = sp.y * f;
         newUv += vec2( t, 0.0 );
-    
         vec3 texSample = texture2D(texture, newUv ).rgb;
-        float uOff= ( texSample.g * brightness * 4.5 + t );
-        vec2 starUV= newUv + vec2( uOff, 0.0 );
-        starSphere= texture2D(texture, starUV ).rgb;
+        float uOff  = ( texSample.g * brightness * 4.5 + t );
+        vec2 starUV = newUv + vec2( uOff, 0.0 );
+        starSphere  = texture2D(texture, starUV ).rgb;
     }
 
     float starGlow =  dist < radius ? min( max( 1.0 - dist * ( 1.0 - brightness ), 0.0 ), 1.0 ) : 0.0;
-    gl_FragColor.rgb= vec3(
+    gl_FragColor.rgb = vec3(
         f * ( 0.75 + brightness * 0.3 ) * orange ) +
         starSphere +
         corona * orange +
@@ -164,7 +160,7 @@ void main() {
 </script>
 
 
-<script id="planet.vert" type="x-shader/x-vertex">
+<script id="sun.vert" type="x-shader/x-vertex">
 
 varying vec2 vUv;
 varying vec3 vPos;
@@ -191,19 +187,10 @@ if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var container, stats;
 var camera, scene, renderer, clock;
 
-
-var planet;
-var planet_radius     = 0.8;
-var planet_details    = 50;
-var planet_resolution = 256;
-var pr_w = planet_resolution;
-var pr_h = planet_resolution;
+var sun;
 var cvs, ctx;
-var velocities;
 
-var materials = []
-var materials_cnt = 8;
-var current_material;
+var sun_material;
 var time = {value:1.0};
 
 String.prototype.hashCode = function() {
@@ -216,7 +203,7 @@ function rnd(r) {
 }
 
 var params = {
-   brightness: 0.0,
+   brightness: 0.1,
 };
 
 function p2u(p) {
@@ -226,10 +213,8 @@ function p2u(p) {
 function init_gui() {
     var gui = new dat.GUI();
     
-    var brightness = function (val) { current_material.uniforms.brightness.value = val};
+    var brightness = function (val) { sun_material.uniforms.brightness.value = val};
     gui.add(params, "brightness", -2.0, 2.0).onChange(brightness);
-
-    
 }
 
 
@@ -242,10 +227,6 @@ function init() {
 	clock = new THREE.Clock();
 
 	var geometry = new THREE.PlaneBufferGeometry(2.0,2.0);
-    velocities = {type: "t", value: new THREE.Texture(cvs) };
-    velocities.value.wrapS = velocities.value.wrapT = THREE.RepeatWrapping;
-    velocities.value.needsUpdate = true;
-
 
 	var texture  = { value: new THREE.TextureLoader().load('sun.jpg' )}
 	texture.value.wrapS = texture.value.wrapT = THREE.RepeatWrapping;
@@ -256,17 +237,15 @@ function init() {
         time:       time,
 		texture:    texture,
 	};
-	var material = new THREE.ShaderMaterial( {
+	sun_material = new THREE.ShaderMaterial( {
 		uniforms: uniforms,
-		vertexShader  : document.getElementById( 'planet.vert' ).textContent,
-		fragmentShader: document.getElementById( 'planet.frag' ).textContent
+		vertexShader  : document.getElementById( 'sun.vert' ).textContent,
+		fragmentShader: document.getElementById( 'sun.frag' ).textContent
 	} );
-    materials.push(material);
 
-    current_material = materials[0]
-    	planet = new THREE.Mesh( geometry, current_material );
-    planet.rotation.x = 3.141/8.0;
-	scene.add( planet );
+    sun = new THREE.Mesh( geometry, sun_material );
+    sun.rotation.x = 3.141/8.0;
+	scene.add( sun );
 
 	renderer = new THREE.WebGLRenderer({alpha: true});
 	renderer.setPixelRatio( window.devicePixelRatio );
