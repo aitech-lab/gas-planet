@@ -137,7 +137,7 @@ void main() {
 	vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 	gl_Position     = projectionMatrix * mvPosition;
 	vPos            = vec3(mvPosition)/mvPosition.w;
-	vNormal         = vec3(normalMatrix * normal);
+	//vNormal         = vec3(normalMatrix * normal);
 }
 </script>
 
