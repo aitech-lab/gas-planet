@@ -58,14 +58,15 @@
 #define PI     3.14159265359
 #define TWO_PI 6.28318530718
 
-precision mediump float;
+#ifdef GL_ES
+precision highp float;
+#endif
 
 uniform float time;
 uniform float brightness;
 uniform sampler2D texture;
 
 varying vec2 vUv;
-varying vec3 vNormal;
 varying vec3 vPos;
 
 // Fork of the main sequence star by flight404: https://www.shadertoy.com/view/4dXGR4
@@ -166,14 +167,12 @@ void main() {
 
 varying vec2 vUv;
 varying vec3 vPos;
-varying vec3 vNormal;
 
 void main() {
 	vUv = uv;
 	vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 	gl_Position     = projectionMatrix * mvPosition;
 	vPos            = vec3(mvPosition)/mvPosition.w;
-	vNormal         = vec3(normalMatrix * normal);
 }
 </script>
 
