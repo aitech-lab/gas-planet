@@ -1,166 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<title>Gas planet</title>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-<style>
-	body {
-		color: #ffffff;
-		font-family:Monospace;
-		font-size:13px;
-		text-align:center;
-		font-weight: bold;
-
-		background-color: #050505;
-		margin: 0px;
-		overflow: hidden;
-	}
-
-	#input {
-		position: absolute;
-		top: 20px;
-		width: 50%;
-		left: 25%;
-		padding: 5px;
-		font-size:32px;
-		background: black;
-		border: 1px solid gray;
-		color: gray;
-		text-align: center;
-	}
-
-	#planet_texture {
-		position: absolute;
-		bottom: 20px;
-	}
-
-	a {
-
-		color: #ffffff;
-	}
-</style>
-</head>
-<body>
-
-
-<script src="three.min.js"></script>
-<script src="Detector.js"></script>
-<script src="stats.min.js"></script>
-
-<!-- PLANET -->
-
-
-
-<div id="container"></div>
-<script id="planet.frag" type="x-shader/x-fragment">
-
-#define PI     3.14159265359
-#define TWO_PI 6.28318530718
-
-precision mediump float; 
-
-uniform float     time;
-uniform sampler2D texture;
-uniform sampler2D velocities;
-uniform int       id;
-
-varying vec2 vUv;
-varying vec3 vNormal;
-varying vec3 vPos;
-
-const vec3 lightPos     = vec3(-100.0, 100.0, 100.0);
-const vec3 specColor    = vec3(0.4, 0.1, 0.2);
-
-const vec3 ambientColor = vec3(0.0, 0.2, 0.1);
-const vec3 diffuseColor = vec3(0.5, 0.0, 0.0);
-
-float random (in float x) {
-    return fract(sin(x)*1e4);
-}
-
-float random (in vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898,78.233)))* 43758.5453123);
-}
-
-float pattern(vec2 st, vec2 v, float t) {
-    vec2 p = floor(st+v);
-    return step(t, random(100.0+p*0.000001)+random(p.x)*0.5 );
-}
-
-void main( void ) {
-
-    // расчет освещения
-    vec3 normal     = normalize(vNormal);
-    vec3 lightDir   = normalize(lightPos - vPos);
-    vec3 reflectDir = reflect(-lightDir, normal);
-    vec3 viewDir    = normalize(-vPos);
-
-    float idf        = sin(float(id));
-    float lambertian = max(dot(lightDir,normal), 0.0);
-    float specular = 0.0;
-
-    if(lambertian > 0.0) {
-       float specAngle = max(dot(reflectDir, viewDir), 0.0);
-       specular = pow(specAngle, 4.0);
-    }
-
-    float atm = clamp(pow(1.0-dot(normal,viewDir),0.4)*normal.y*normal.x, 0.0, 1.0);
-    vec3 atmosphere = vec3(atm, atm, atm/2.0);
-
-    atm = clamp(pow(1.0-dot(normal,viewDir),1.0)*(normal.x-normal.y), 0.0, 1.0);
-    atmosphere += vec3(atm/2.0,atm, atm/1.5)/2.0;
-
-    atm = clamp(pow(1.0-dot(normal,viewDir),1.7)*(normal.x+normal.y), 0.0, 1.0);
-    atmosphere += vec3(atm*1.5, atm*1.5, atm)/2.0;
-
-    //    
-
-    float e = sin(vUv.y*PI);
-    e = pow(e, 2.0);
-    vec2 velt = texture2D(velocities, vUv).rg;
-    
-
-    // Шейдер текстуры
-    float r = random(vUv);
-    vec3 rgb = vec3(pow(r/2.0,2.0));
-
-    // Финальная сборка
-    
-    gl_FragColor = vec4(ambientColor*rgb +
-                        lambertian*rgb +
-                        specular*specColor+
-                        atmosphere,1.0);
-                        
-}
-</script>
-
-
-<script id="planet.vert" type="x-shader/x-vertex">
-
-varying vec2 vUv;
-varying vec3 vPos;
-varying vec3 vNormal;
-
-void main() {
-	vUv = uv;
-	vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
-	gl_Position     = projectionMatrix * mvPosition;
-	vPos            = vec3(mvPosition)/mvPosition.w;
-	vNormal         = vec3(normalMatrix * normal);
-}
-</script>
-
-
-<!-- MAIN -->
-
-
-<script>
-
-
 if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var container, stats;
 var camera, scene, renderer, clock;
+
 
 var planet;
 var planet_radius     = 0.8;
@@ -173,6 +14,7 @@ var velocities;
 
 var materials = []
 var materials_cnt = 8;
+var current_material;
 var time = {value:1.0};
 
 String.prototype.hashCode = function() {
@@ -184,8 +26,69 @@ function rnd(r) {
     return (x - Math.floor(x)) * r;
 }
 
-init();
-animate();
+
+var params = {
+   brightness: 0.0,
+   octaves   : 5,
+   equator   : 2.0,
+   turbulence: 1.0,
+   contrast  : 1.2,
+   cnt_width : 1.0,
+   cnt_alpha : 0.5,
+   cnt_col1  : [220,200,100],
+   cnt_col2  : [ 70, 90,180],
+   cnt_col3  : [250,250,180],
+   spec_col  : [100, 80, 60],
+   amb_col   : [ 20, 40, 20],
+
+};
+
+function p2u(p) {
+   return new THREE.Vector3( params[p][0]/255.0, params[p][1]/255.0, params[p][2]/255.0);
+}
+
+function init_gui() {
+    var gui = new dat.GUI();
+
+    var octaves = function (val) { current_material.uniforms.octaves.value = val};
+    gui.add(params, "octaves", 1, 8, 1).onChange(octaves);
+
+    var equator = function (val) { current_material.uniforms.equator.value = val};
+    gui.add(params, "equator", 0.0, 10.0).onChange(equator);
+
+    var turbulence = function (val) { current_material.uniforms.turbulence.value = val};
+    gui.add(params, "turbulence", 0.0, 4.0).onChange(turbulence);
+
+    var contrast = function (val) { current_material.uniforms.contrast.value = val};
+    gui.add(params, "contrast", 0.1, 2.0).onChange(contrast);
+    
+    var brightness = function (val) { current_material.uniforms.brightness.value = val};
+    gui.add(params, "brightness", -2.0, 2.0).onChange(brightness);
+
+    var cnt_width = function (val) { current_material.uniforms.cnt_width.value = val};
+    gui.add(params, "cnt_width", 0.1, 8.0).onChange(cnt_width);
+
+    var cnt_alpha = function (val) { current_material.uniforms.cnt_alpha.value = val};
+    gui.add(params, "cnt_alpha", 0.1, 2.0).onChange(cnt_alpha);
+
+    var cnt_col1 = function (val) { current_material.uniforms.cnt_col1.value = p2u("cnt_col1") };
+    gui.addColor(params, "cnt_col1").onChange(cnt_col1);
+    
+    var cnt_col2 = function (val) { current_material.uniforms.cnt_col2.value = p2u("cnt_col2") };
+    gui.addColor(params, "cnt_col2").onChange(cnt_col2);
+    
+    var cnt_col3 = function (val) { current_material.uniforms.cnt_col3.value = p2u("cnt_col3") };
+    gui.addColor(params, "cnt_col3").onChange(cnt_col3);
+
+    var spec_col = function (val) { current_material.uniforms.spec_col.value = p2u("spec_col") };
+    gui.addColor(params, "spec_col").onChange(spec_col);
+    
+    var amb_col = function (val) { current_material.uniforms.amb_col.value = p2u("amb_col") };
+    gui.addColor(params, "amb_col").onChange(amb_col);
+    
+    
+}
+
 
 function init() {
 
@@ -207,11 +110,26 @@ function init() {
 
     	var texture  = { value: new THREE.TextureLoader().load('palettes/pal_0'+i+'.png' )}
     	texture.value.wrapS = texture.value.wrapT = THREE.RepeatWrapping;
-    	
+
+        
         // Переменные шейдера
         var uniforms = {
     	    id:         { value: 1.0},
-    		time:       time,
+
+    	    octaves:    { type: "i" , value: params.octaves    },
+    	    equator:    { type: "f" , value: params.equator    },
+    	    turbulence: { type: "f" , value: params.turbulence },
+    	    contrast:   { type: "f" , value: params.contrast   },
+    	    brightness: { type: "f" , value: params.brightness },
+    	    cnt_width:  { type: "f" , value: params.cnt_width  },
+    	    cnt_alpha:  { type: "f" , value: params.cnt_alpha  },
+    	    cnt_col1 :  { type: "v3", value: p2u("cnt_col1")   },
+    	    cnt_col2 :  { type: "v3", value: p2u("cnt_col2")   },
+    	    cnt_col3 :  { type: "v3", value: p2u("cnt_col3")   },
+    	    spec_col :  { type: "v3", value: p2u("spec_col")   },
+    	    amb_col  :  { type: "v3", value: p2u("amb_col" )   },
+
+            time:       time,
     		texture:    texture,
     		velocities: velocities
     	};
@@ -222,10 +140,8 @@ function init() {
     	} );
         materials.push(material);
     }
-    
-	planet = new THREE.Mesh( geometry, materials[0] );
-	// planet.position.x = 0;
-	// planet.position.y = 0;
+    current_material = materials[0]
+    	planet = new THREE.Mesh( geometry, current_material );
     planet.rotation.x = 3.141/8.0;
 	scene.add( planet );
 
@@ -252,9 +168,10 @@ function init_planet_texture() {
     //document.body.prepend(cvs);
 }
 
-function generate_planet_texture() {
-    // Основной фон
 
+function generate_planet_texture() {
+
+    // Основной фон
     ctx.globalCompositeOperation = "normal";
     var grd=ctx.createLinearGradient(0, 0, 0, pr_h);
     grd.addColorStop(0.0,"#000000");
@@ -263,6 +180,7 @@ function generate_planet_texture() {
     ctx.fillStyle = grd;
     ctx.fillRect(0,0,pr_w,pr_h);
 
+    // Пятна
 
     for(var i=0; i<100; i++) {
        var x = rnd(pr_w);
@@ -330,21 +248,19 @@ function render() {
 	renderer.render( scene, camera );
 }
 
-String.prototype.hashCode = function() {
-  return this.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
-};
 
 function input(val) {
     hash = Math.abs(val.hashCode());
-    m = materials[hash%materials_cnt];
-    m.uniforms.id.value = hash;
+    seed = hash;
+
+    current_material = materials[hash%materials_cnt];
+    current_material.uniforms.id.value = hash;
+
     generate_planet_texture();
     velocities.value.needsUpdate = true;
-    planet.material = m
+    planet.material = current_material;
 }
 
-</script>
-
-<input id="input" onkeyup="input(this.value)" autofocus/>
-
-</body></html>
+init();
+init_gui(i);
+animate();
