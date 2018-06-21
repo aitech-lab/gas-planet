@@ -1,5 +1,7 @@
 # gas-planet
 
+![image](screenshoot.png)
+
 - https://ailove-lab.github.io/gas-planet/
 - https://ailove-lab.github.io/gas-planet/index_01.html
 - https://ailove-lab.github.io/gas-planet/index_02.html
@@ -10,4 +12,3 @@
 - https://ailove-lab.github.io/gas-planet/index_07.html
 - https://ailove-lab.github.io/gas-planet/index_08.html
 
-![image](screenshoot.png)

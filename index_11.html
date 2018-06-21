@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Gas sun</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style>
+	body {
+		color: #ffffff;
+		font-family:Monospace;
+		font-size:13px;
+		text-align:center;
+		font-weight: bold;
+
+		background-color: #050505;
+		background-image: url("space.jpg");
+        background-size: cover;
+		margin: 0px;
+		overflow: hidden;
+	}
+
+	#input {
+		position: absolute;
+		top: 20px;
+		width: 50%;
+		left: 25%;
+		padding: 5px;
+		font-size:32px;
+		background: black;
+		border: 1px solid gray;
+		color: gray;
+		text-align: center;
+	}
+
+	#sun_texture {
+		position: absolute;
+		bottom: 20px;
+	}
+
+	a {
+
+		color: #ffffff;
+	}
+</style>
+</head>
+<body>
+
+<div id="container"></div>
+
+<script src="three.min.js"></script>
+<script src="Detector.js"></script>
+<script src="stats.min.js"></script>
+
+<!-- PLANET -->
+
+<script id="sun.frag" type="x-shader/x-fragment">
+
+#define PI     3.14159265359
+#define TWO_PI 6.28318530718
+
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform float time;
+uniform float brightness;
+uniform sampler2D texture;
+
+varying vec2 vUv;
+varying vec3 vPos;
+
+// Fork of the main sequence star by flight404: https://www.shadertoy.com/view/4dXGR4
+// based on https://www.shadertoy.com/view/lsf3RH by
+
+float snoise(vec3 uv, float res) {
+
+    const vec3 s = vec3(1e0, 1e2, 1e4);
+    
+    uv *= res;
+    
+    vec3 uv0 = floor(mod(uv, res))*s;
+    vec3 uv1 = floor(mod(uv+vec3(1.), res))*s;
+    
+    vec3 f = fract(uv); f = f*f*(3.0-2.0*f);
+    
+    vec4 v = vec4(uv0.x+uv0.y+uv0.z, uv1.x+uv0.y+uv0.z,
+                  uv0.x+uv1.y+uv0.z, uv1.x+uv1.y+uv0.z);
+    
+    vec4 r = fract(sin(v*1e-3)*1e5);
+    float r0 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+    
+    r = fract(sin((v + uv1.z - uv0.z)*1e-3)*1e5);
+    float r1 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+    
+    return mix(r0, r1, f.z)*2.-1.;
+}
+
+void main() {
+
+    float radius = 0.24 + brightness * 0.2;
+    float invRadius = 1.0/radius;
+
+    vec3 orange    = vec3( 0.8, 0.65, 0.3 );
+    vec3 orangeRed = vec3( 0.8, 0.35, 0.1 );
+    float t = time * 0.1;
+    float aspect = 1.0;
+    vec2 uv = vUv;
+    vec2 p = -0.5 + uv;
+
+    p.x *= aspect;
+    float fade= pow( length( 2.0 * p ), 0.5 );
+    float fVal1= 1.0 - fade;
+    float fVal2= 1.0 - fade;
+    float angle= atan( p.x, p.y )/6.2832;
+    float dist= length(p);
+    vec3 coord= vec3( angle, dist, t * 0.1 );
+
+    // CORONA
+    float newTime1 = abs( snoise( coord + vec3( 0.0, -t * ( 0.35 + brightness * 0.001 ), t * 0.015 ), 15.0 ) );
+    float newTime2 = abs( snoise( coord + vec3( 0.0, -t * ( 0.15 + brightness * 0.001 ), t * 0.015 ), 45.0 ) );
+
+    for( int i=1; i<=4; i++ ){
+       float power = pow( 2.0, float(i + 1) );
+       fVal1 += ( 0.5 / power ) * snoise( coord + vec3( 0.0, -t, t * 0.2 ), ( power * ( 10.0 ) * ( newTime1 + 1.0 ) ) );
+       fVal2 += ( 0.5 / power ) * snoise( coord + vec3( 0.0, -t, t * 0.2 ), ( power * ( 25.0 ) * ( newTime2 + 1.0 ) ) );
+    }
+
+    float corona= pow( fVal1 * max( 1.1 - fade, 0.0 ), 2.0 ) * 50.0;
+    corona+= pow( fVal2 * max( 1.1 - fade, 0.0 ), 2.0 ) * 50.0;
+    corona*= 1.2 - newTime1;
+    vec3 sphereNormal = vec3( 0.0, 0.0, 1.0 );
+    vec3 dir = vec3( 0.0 );
+    vec3 center= vec3( 0.5, 0.5, 1.0 );
+    vec3 starSphere= vec3( 0.0 );
+
+    // SUN SURFACE
+    vec2 sp = -1.0 + 2.0 * uv;
+    sp.x *= aspect;
+    sp *= ( 2.0 - brightness );
+    float r = dot(sp,sp);
+    float f = (1.0-sqrt(abs(1.0-r)))/(r) + brightness * 0.5;
+    if( dist < radius ){
+        corona *= pow( dist * invRadius, 24.0 );
+        vec2 newUv;
+        newUv.x = sp.x * f;
+        newUv.y = sp.y * f;
+        newUv += vec2( t, 0.0 );
+        vec3 texSample = texture2D(texture, newUv ).rgb;
+        float uOff  = ( texSample.g * brightness * 4.5 + t );
+        vec2 starUV = newUv + vec2( uOff, 0.0 );
+        starSphere  = texture2D(texture, starUV ).rgb;
+    }
+
+    float starGlow =  dist < radius ? min( max( 1.0 - dist * ( 1.0 - brightness ), 0.0 ), 1.0 ) : 0.0;
+    gl_FragColor.rgb =
+        vec3(f*(0.75+brightness*0.3)*orange) +
+        starSphere +
+        corona * orange +
+        starGlow * orangeRed;
+    gl_FragColor.a = dist < radius ? 1.0: corona;
+    
+}
+</script>
+
+
+<script id="sun.vert" type="x-shader/x-vertex">
+
+varying vec2 vUv;
+varying vec3 vPos;
+
+void main() {
+	vUv = uv;
+	vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+	gl_Position     = projectionMatrix * mvPosition;
+	vPos            = vec3(mvPosition)/mvPosition.w;
+}
+</script>
+
+
+<!-- MAIN -->
+
+<script type="text/javascript" src="dat.gui.min.js"></script>
+
+<script>
+
+
+if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+var container, stats;
+var camera, scene, renderer, clock;
+
+var sun;
+var cvs, ctx;
+
+var sun_material;
+var time = {value:1.0};
+
+String.prototype.hashCode = function() {
+  return this.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+};
+var seed = 1;
+function rnd(r) {
+    var x = Math.sin(seed++) * 10000;
+    return (x - Math.floor(x)) * r;
+}
+
+var params = {
+   brightness: 0.1,
+};
+
+function p2u(p) {
+   return new THREE.Vector3( params[p][0]/255.0, params[p][1]/255.0, params[p][2]/255.0);
+}
+
+function init_gui() {
+    var gui = new dat.GUI();
+    
+    var brightness = function (val) { sun_material.uniforms.brightness.value = val};
+    gui.add(params, "brightness", -2.0, 2.0).onChange(brightness);
+}
+
+
+function init() {
+
+	container = document.getElementById( 'container' );
+	camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 3000 );
+	camera.position.z = 4;
+	scene = new THREE.Scene();
+	clock = new THREE.Clock();
+
+	var geometry = new THREE.PlaneBufferGeometry(2.0,2.0);
+
+	var texture  = { value: new THREE.TextureLoader().load('sun.jpg' )}
+	texture.value.wrapS = texture.value.wrapT = THREE.RepeatWrapping;
+ 
+        // Переменные шейдера
+    var uniforms = {
+	    brightness: { type: "f" , value: params.brightness },
+        time:       time,
+		texture:    texture,
+	};
+	sun_material = new THREE.ShaderMaterial( {
+		uniforms: uniforms,
+		vertexShader  : document.getElementById( 'sun.vert' ).textContent,
+		fragmentShader: document.getElementById( 'sun.frag' ).textContent
+	} );
+
+    sun = new THREE.Mesh( geometry, sun_material );
+    sun.rotation.x = 3.141/8.0;
+	scene.add( sun );
+
+	renderer = new THREE.WebGLRenderer({alpha: true});
+	renderer.setPixelRatio( window.devicePixelRatio );
+	container.appendChild( renderer.domElement );
+
+	stats = new Stats();
+	container.appendChild( stats.dom );
+
+	onWindowResize();
+
+	window.addEventListener( 'resize', onWindowResize, false );
+
+}
+
+function onWindowResize( event ) {
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+}
+
+function animate() {
+	requestAnimationFrame( animate );
+	render();
+	stats.update();
+}
+
+function render() {
+	var delta = clock.getDelta();
+	time.value = clock.elapsedTime;
+	for ( var i = 0; i < scene.children.length; i ++ ) {
+		var object = scene.children[ i ];
+		// look to cmamera
+        object.quaternion.copy( camera.quaternion );
+	}
+	renderer.render( scene, camera );
+}
+
+
+init();
+init_gui();
+animate();
+
+</script>
+
+
+</body></html>
