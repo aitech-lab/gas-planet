@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Gas planet</title>
+<title>Gas sun</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style>
@@ -13,6 +13,8 @@
 		font-weight: bold;
 
 		background-color: #050505;
+		background-image: url("space.jpg");
+        background-size: cover;
 		margin: 0px;
 		overflow: hidden;
 	}
@@ -30,7 +32,7 @@
 		text-align: center;
 	}
 
-	#planet_texture {
+	#sun_texture {
 		position: absolute;
 		bottom: 20px;
 	}
@@ -51,164 +53,126 @@
 
 <!-- PLANET -->
 
-<script id="planet.frag" type="x-shader/x-fragment">
+<script id="sun.frag" type="x-shader/x-fragment">
 
 #define PI     3.14159265359
 #define TWO_PI 6.28318530718
 
-precision mediump float; 
+#ifdef GL_ES
+precision highp float;
+#endif
 
-uniform int   id;
-uniform int   octaves;
 uniform float time;
-
-uniform float contrast; 
 uniform float brightness;
-uniform float equator;
-uniform float turbulence;
-
-uniform float cnt_width;
-uniform float cnt_alpha;
-
-uniform vec3 cnt_col1;
-uniform vec3 cnt_col2;
-uniform vec3 cnt_col3;
-uniform vec3 spec_col;
-uniform vec3 amb_col;
-
 uniform sampler2D texture;
-uniform sampler2D velocities;
 
 varying vec2 vUv;
-varying vec3 vNormal;
 varying vec3 vPos;
 
-const vec3 lightPos     = vec3(-100.0, 100.0, 100.0);
+// Fork of the main sequence star by flight404: https://www.shadertoy.com/view/4dXGR4
+// based on https://www.shadertoy.com/view/lsf3RH by
 
-const vec3 diffuseColor = vec3(0.3, 0.0, 0.0);
+float snoise(vec3 uv, float res) {
 
-float random (in vec2 _st) {
-    return fract(sin(dot(_st.xy, vec2(12.9898,78.233))) * 43758.54531237);
-}
-
-float noise (in vec2 _st) {
-    vec2 i = floor(_st);
-    vec2 f = fract(_st);
-
-    // Four corners in 2D of a tile
-    float a = random(i);
-    float b = random(i + vec2(1.0, 0.0));
-    float c = random(i + vec2(0.0, 1.0));
-    float d = random(i + vec2(1.0, 1.0));
-
-    vec2 u = f * f * (3. - 2.0 * f);
-
-    return mix(a, b, u.x) + 
-            (c - a)* u.y * (1. - u.x) + 
-            (d - b) * u.x * u.y;
-}
-
-
-float fbm ( in vec2 _st) {
-    float v = 0.0;
-    float a = 0.5;
-    vec2 shift = vec2(20.0);
-    // Rotate to reduce axial bias
-    mat2 rot = mat2( cos(0.5), sin(0.5), 
-                    -sin(0.5), cos(0.50));
-    for (int i = 0; i < 10; ++i) {
-        v += a * noise(_st);
-        _st = rot * _st * 2.2 + shift;
-        a *= 0.5;
-        if(i>=octaves) break;
-    }
-    return v;
-}
-
-
-void main( void ) {
-
-    // расчет освещения
-    vec3 normal     = normalize(vNormal);
-    vec3 lightDir   = normalize(lightPos - vPos);
-    vec3 reflectDir = reflect(-lightDir, normal);
-    vec3 viewDir    = normalize(-vPos);
-
-    float idf        = 0.5+sin(float(id))/2.0;
-    float lambertian = max(dot(lightDir,normal), 0.0);
-    float specular = 0.0;
-
-    if(lambertian > 0.0) {
-       float specAngle = max(dot(reflectDir, viewDir), 0.0);
-       specular = pow(specAngle, 4.0);
-    }
-    // atmoshpere
-    float atm = clamp(pow(1.0-dot(normal,viewDir),0.4*cnt_width)*normal.y*normal.x, 0.0, 1.0);
-    vec3 atmosphere = cnt_col1*atm*cnt_alpha;
-
-    atm = clamp(pow(1.0-dot(normal,viewDir),1.0*cnt_width)*(normal.x-normal.y), 0.0, 1.0);
-    atmosphere += cnt_col2*atm*cnt_alpha;
-
-    atm = clamp(pow(1.0-dot(normal,viewDir),1.7*cnt_width)*(normal.x+normal.y), 0.0, 1.0);
-    atmosphere += cnt_col3*atm*cnt_alpha;
-
-    // turbulences
-
-    float e = sin(vUv.y*PI);
-    e = pow(e, equator);
-    float vel = texture2D(velocities, vUv).r*turbulence;
+    const vec3 s = vec3(1e0, 1e2, 1e4);
     
+    uv *= res;
+    
+    vec3 uv0 = floor(mod(uv, res))*s;
+    vec3 uv1 = floor(mod(uv+vec3(1.), res))*s;
+    
+    vec3 f = fract(uv); f = f*f*(3.0-2.0*f);
+    
+    vec4 v = vec4(uv0.x+uv0.y+uv0.z, uv1.x+uv0.y+uv0.z,
+                  uv0.x+uv1.y+uv0.z, uv1.x+uv1.y+uv0.z);
+    
+    vec4 r = fract(sin(v*1e-3)*1e5);
+    float r0 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+    
+    r = fract(sin((v + uv1.z - uv0.z)*1e-3)*1e5);
+    float r1 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+    
+    return mix(r0, r1, f.z)*2.-1.;
+}
+
+void main() {
+
+    float radius = 0.24 + brightness * 0.2;
+    float invRadius = 1.0/radius;
+
+    vec3 orange    = vec3( 0.8, 0.65, 0.3 );
+    vec3 orangeRed = vec3( 0.8, 0.35, 0.1 );
+    float t = time * 0.1;
+    float aspect = 1.0;
     vec2 uv = vUv;
-    uv.x = 0.5+sin((uv.x-time*0.01+idf)*TWO_PI)/2.0;
-    vec2 st = (uv*e +vel*e - 0.5);
-    st *= 3.5;
+    vec2 p = -0.5 + uv;
+
+    p.x *= aspect;
+    float fade= pow( length( 2.0 * p ), 0.5 );
+    float fVal1= 1.0 - fade;
+    float fVal2= 1.0 - fade;
+    float angle= atan( p.x, p.y )/6.2832;
+    float dist= length(p);
+    vec3 coord= vec3( angle, dist, t * 0.1 );
+
+    // CORONA
+    float newTime1 = abs( snoise( coord + vec3( 0.0, -t * ( 0.35 + brightness * 0.001 ), t * 0.015 ), 15.0 ) );
+    float newTime2 = abs( snoise( coord + vec3( 0.0, -t * ( 0.15 + brightness * 0.001 ), t * 0.015 ), 45.0 ) );
+
+    for( int i=1; i<=4; i++ ){
+       float power = pow( 2.0, float(i + 1) );
+       fVal1 += ( 0.5 / power ) * snoise( coord + vec3( 0.0, -t, t * 0.2 ), ( power * ( 10.0 ) * ( newTime1 + 1.0 ) ) );
+       fVal2 += ( 0.5 / power ) * snoise( coord + vec3( 0.0, -t, t * 0.2 ), ( power * ( 25.0 ) * ( newTime2 + 1.0 ) ) );
+    }
+
+    float corona= pow( fVal1 * max( 1.1 - fade, 0.0 ), 2.0 ) * 50.0;
+    corona+= pow( fVal2 * max( 1.1 - fade, 0.0 ), 2.0 ) * 50.0;
+    corona*= 1.2 - newTime1;
+    vec3 sphereNormal = vec3( 0.0, 0.0, 1.0 );
+    vec3 dir = vec3( 0.0 );
+    vec3 center= vec3( 0.5, 0.5, 1.0 );
+    vec3 starSphere= vec3( 0.0 );
+
+    // SUN SURFACE
+    vec2 sp = -1.0 + 2.0 * uv;
+    sp.x *= aspect;
+    sp *= ( 2.0 - brightness );
+    float r = dot(sp,sp);
+    float f = (1.0-sqrt(abs(1.0-r)))/(r) + brightness * 0.5;
+    if( dist < radius ){
+        corona *= pow( dist * invRadius, 24.0 );
+        vec2 newUv;
+        newUv.x = sp.x * f;
+        newUv.y = sp.y * f;
+        newUv += vec2( t, 0.0 );
+        vec3 texSample = texture2D(texture, newUv ).rgb;
+        float uOff  = ( texSample.g * brightness * 4.5 + t );
+        vec2 starUV = newUv + vec2( uOff, 0.0 );
+        starSphere  = texture2D(texture, starUV ).rgb;
+    }
+
+    float starGlow =  dist < radius ? min( max( 1.0 - dist * ( 1.0 - brightness ), 0.0 ), 1.0 ) : 0.0;
+    gl_FragColor.rgb =
+        vec3(f*(0.75+brightness*0.3)*orange) +
+        starSphere +
+        corona * orange +
+        starGlow * orangeRed;
+    gl_FragColor.a = dist < radius ? 1.0: corona;
     
-    vec3 color = vec3(0.);
-    vec2 a = vec2(0.0);
-    vec2 b = vec2(0.0);
-    vec2 c = vec2(60.,800.);
-    
-    a.x = fbm( st            );
-    a.y = fbm( st + vec2(idf));
-    
-    b.x = fbm( st + idf*4.0*a);
-    b.y = fbm( st       );
-
-    c.x = fbm( st + idf*7.0*b + vec2(10.7, 0.2)+ idf/5.0*time);
-    c.y = fbm( st + idf*3.0*b + vec2( 0.3,12.8)+ idf/9.0*time);
-
-    float f = fbm(st*idf*2.0+b+c);
-
-    vec3 rgb1 = texture2D(texture, a.xy*8.0*idf).rgb;
-    vec3 rgb2 = texture2D(texture, b.xy*8.0*idf).rgb;
-    color = mix(rgb1, rgb2, clamp((f*f), 1.0 - e, 1.0));
-    // color = mix(color, vec3(0.413,0.524,0.880), clamp(length(c.x),0.480, 0.92));
-
-
-    vec3 rgb = vec3(f*2.5*color);
-    rgb = amb_col*rgb +
-          lambertian*rgb +
-          specular*spec_col+
-          atmosphere;
-    rgb = rgb*contrast-(contrast-1.0)+brightness;
-    gl_FragColor = vec4(rgb,1.0);
-                        
 }
 </script>
 
 
-<script id="planet.vert" type="x-shader/x-vertex">
+<script id="sun.vert" type="x-shader/x-vertex">
 
 varying vec2 vUv;
 varying vec3 vPos;
-varying vec3 vNormal;
 
 void main() {
 	vUv = uv;
 	vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 	gl_Position     = projectionMatrix * mvPosition;
 	vPos            = vec3(mvPosition)/mvPosition.w;
-	vNormal         = vec3(normalMatrix * normal);
 }
 </script>
 
@@ -224,19 +188,10 @@ if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var container, stats;
 var camera, scene, renderer, clock;
 
-
-var planet;
-var planet_radius     = 0.8;
-var planet_details    = 50;
-var planet_resolution = 256;
-var pr_w = planet_resolution;
-var pr_h = planet_resolution;
+var sun;
 var cvs, ctx;
-var velocities;
 
-var materials = []
-var materials_cnt = 8;
-var current_material;
+var sun_material;
 var time = {value:1.0};
 
 String.prototype.hashCode = function() {
@@ -248,21 +203,8 @@ function rnd(r) {
     return (x - Math.floor(x)) * r;
 }
 
-
 var params = {
-   brightness: 0.0,
-   octaves   : 5,
-   equator   : 2.0,
-   turbulence: 1.0,
-   contrast  : 1.2,
-   cnt_width : 1.0,
-   cnt_alpha : 0.5,
-   cnt_col1  : [220,200,100],
-   cnt_col2  : [ 70, 90,180],
-   cnt_col3  : [250,250,180],
-   spec_col  : [100, 80, 60],
-   amb_col   : [ 20, 40, 20],
-
+   brightness: 0.1,
 };
 
 function p2u(p) {
@@ -271,51 +213,13 @@ function p2u(p) {
 
 function init_gui() {
     var gui = new dat.GUI();
-
-    var octaves = function (val) { current_material.uniforms.octaves.value = val};
-    gui.add(params, "octaves", 1, 8, 1).onChange(octaves);
-
-    var equator = function (val) { current_material.uniforms.equator.value = val};
-    gui.add(params, "equator", 0.0, 10.0).onChange(equator);
-
-    var turbulence = function (val) { current_material.uniforms.turbulence.value = val};
-    gui.add(params, "turbulence", 0.0, 4.0).onChange(turbulence);
-
-    var contrast = function (val) { current_material.uniforms.contrast.value = val};
-    gui.add(params, "contrast", 0.1, 2.0).onChange(contrast);
     
-    var brightness = function (val) { current_material.uniforms.brightness.value = val};
+    var brightness = function (val) { sun_material.uniforms.brightness.value = val};
     gui.add(params, "brightness", -2.0, 2.0).onChange(brightness);
-
-    var cnt_width = function (val) { current_material.uniforms.cnt_width.value = val};
-    gui.add(params, "cnt_width", 0.1, 8.0).onChange(cnt_width);
-
-    var cnt_alpha = function (val) { current_material.uniforms.cnt_alpha.value = val};
-    gui.add(params, "cnt_alpha", 0.1, 2.0).onChange(cnt_alpha);
-
-    var cnt_col1 = function (val) { current_material.uniforms.cnt_col1.value = p2u("cnt_col1") };
-    gui.addColor(params, "cnt_col1").onChange(cnt_col1);
-    
-    var cnt_col2 = function (val) { current_material.uniforms.cnt_col2.value = p2u("cnt_col2") };
-    gui.addColor(params, "cnt_col2").onChange(cnt_col2);
-    
-    var cnt_col3 = function (val) { current_material.uniforms.cnt_col3.value = p2u("cnt_col3") };
-    gui.addColor(params, "cnt_col3").onChange(cnt_col3);
-
-    var spec_col = function (val) { current_material.uniforms.spec_col.value = p2u("spec_col") };
-    gui.addColor(params, "spec_col").onChange(spec_col);
-    
-    var amb_col = function (val) { current_material.uniforms.amb_col.value = p2u("amb_col") };
-    gui.addColor(params, "amb_col").onChange(amb_col);
-    
-    
 }
 
 
 function init() {
-
-    init_planet_texture();
-    generate_planet_texture();
 
 	container = document.getElementById( 'container' );
 	camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 3000 );
@@ -323,51 +227,28 @@ function init() {
 	scene = new THREE.Scene();
 	clock = new THREE.Clock();
 
-	var geometry = new THREE.SphereBufferGeometry(planet_radius, planet_details, planet_details );
-    velocities = {type: "t", value: new THREE.Texture(cvs) };
-    velocities.value.wrapS = velocities.value.wrapT = THREE.RepeatWrapping;
-    velocities.value.needsUpdate = true;
+	var geometry = new THREE.PlaneBufferGeometry(2.0,2.0);
 
-	for(var i=1; i<=materials_cnt; i++) {
-
-    	var texture  = { value: new THREE.TextureLoader().load('palettes/pal_0'+i+'.png' )}
-    	texture.value.wrapS = texture.value.wrapT = THREE.RepeatWrapping;
-
-        
+	var texture  = { value: new THREE.TextureLoader().load('sun.jpg' )}
+	texture.value.wrapS = texture.value.wrapT = THREE.RepeatWrapping;
+ 
         // Переменные шейдера
-        var uniforms = {
-    	    id:         { value: 1.0},
+    var uniforms = {
+	    brightness: { type: "f" , value: params.brightness },
+        time:       time,
+		texture:    texture,
+	};
+	sun_material = new THREE.ShaderMaterial( {
+		uniforms: uniforms,
+		vertexShader  : document.getElementById( 'sun.vert' ).textContent,
+		fragmentShader: document.getElementById( 'sun.frag' ).textContent
+	} );
 
-    	    octaves:    { type: "i" , value: params.octaves    },
-    	    equator:    { type: "f" , value: params.equator    },
-    	    turbulence: { type: "f" , value: params.turbulence },
-    	    contrast:   { type: "f" , value: params.contrast   },
-    	    brightness: { type: "f" , value: params.brightness },
-    	    cnt_width:  { type: "f" , value: params.cnt_width  },
-    	    cnt_alpha:  { type: "f" , value: params.cnt_alpha  },
-    	    cnt_col1 :  { type: "v3", value: p2u("cnt_col1")   },
-    	    cnt_col2 :  { type: "v3", value: p2u("cnt_col2")   },
-    	    cnt_col3 :  { type: "v3", value: p2u("cnt_col3")   },
-    	    spec_col :  { type: "v3", value: p2u("spec_col")   },
-    	    amb_col  :  { type: "v3", value: p2u("amb_col" )   },
+    sun = new THREE.Mesh( geometry, sun_material );
+    sun.rotation.x = 3.141/8.0;
+	scene.add( sun );
 
-            time:       time,
-    		texture:    texture,
-    		velocities: velocities
-    	};
-    	var material = new THREE.ShaderMaterial( {
-    		uniforms: uniforms,
-    		vertexShader  : document.getElementById( 'planet.vert' ).textContent,
-    		fragmentShader: document.getElementById( 'planet.frag' ).textContent
-    	} );
-        materials.push(material);
-    }
-    current_material = materials[0]
-    	planet = new THREE.Mesh( geometry, current_material );
-    planet.rotation.x = 3.141/8.0;
-	scene.add( planet );
-
-	renderer = new THREE.WebGLRenderer();
+	renderer = new THREE.WebGLRenderer({alpha: true});
 	renderer.setPixelRatio( window.devicePixelRatio );
 	container.appendChild( renderer.domElement );
 
@@ -380,78 +261,11 @@ function init() {
 
 }
 
-// Градиент скоростей
-function init_planet_texture() {
-    cvs = document.createElement('canvas');
-    cvs.id = "planet_texture";
-    ctx = cvs.getContext('2d')
-    cvs.width  = ctx.width  = pr_w;
-    cvs.height = ctx.height = pr_h;
-    //document.body.prepend(cvs);
-}
-
-
-function generate_planet_texture() {
-
-    // Основной фон
-    ctx.globalCompositeOperation = "normal";
-    var grd=ctx.createLinearGradient(0, 0, 0, pr_h);
-    grd.addColorStop(0.0,"#000000");
-    grd.addColorStop(0.5,"#202020");
-    grd.addColorStop(1.0,"#000000");
-    ctx.fillStyle = grd;
-    ctx.fillRect(0,0,pr_w,pr_h);
-
-    // Пятна
-
-    for(var i=0; i<100; i++) {
-       var x = rnd(pr_w);
-       var y = pr_h/2.0-rnd(pr_h/3.0) + rnd(pr_h/3.0);
-       var r = 5+rnd(20);
-       var c = 50;
-       draw_spot(x, y, r, c);
-       if(x+r>pr_w) draw_spot(x-pr_w, y, r, c);
-       if(x-r<0   ) draw_spot(x+pr_w, y, r, c);
-    }
-    
-    for(var i=0; i<4; i++) {
-       var x = rnd(pr_w);
-       var y = pr_h/2.0-rnd(pr_h/4.0) + rnd(pr_h/4.0);
-       var r = 5+rnd(40);
-       var c = 255;
-       draw_spot(x, y, r, c);
-       if(x+r>pr_w) draw_spot(x-pr_w, y, r, c);
-       if(x-r<0   ) draw_spot(x+pr_w, y, r, c);
-    }
-    
-}
-
-function draw_spot(x, y, r, c) {
-
-    var grd=ctx.createRadialGradient(
-        x, y, 0,
-        x, y, r);
-
-    grd.addColorStop(0.0,"rgba("+c+","+c+","+c+",1.0)");
-    grd.addColorStop(0.1,"rgba("+c+","+c+","+c+",0.8)");  
-    grd.addColorStop(0.4,"rgba("+c+","+c+","+c+",0.2)");
-    grd.addColorStop(0.6,"rgba("+c+","+c+","+c+",0.01)");
-    grd.addColorStop(1.0,"rgba("+c+","+c+","+c+",0.0)");
-    
-    ctx.globalCompositeOperation = "screen";
-    // Fill with gradient
-    ctx.fillStyle=grd;
-    ctx.fillRect(0,0,pr_w,pr_h);
-}
-
-
 function onWindowResize( event ) {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 }
-
-//
 
 function animate() {
 	requestAnimationFrame( animate );
@@ -464,24 +278,12 @@ function render() {
 	time.value = clock.elapsedTime;
 	for ( var i = 0; i < scene.children.length; i ++ ) {
 		var object = scene.children[ i ];
-		object.rotation.y += delta * 0.1;
-		//object.rotation.x += delta * 0.5 * ( i % 2 ? -1 : 1 );
+		// look to cmamera
+        object.quaternion.copy( camera.quaternion );
 	}
 	renderer.render( scene, camera );
 }
 
-
-function input(val) {
-    hash = Math.abs(val.hashCode());
-    seed = hash;
-
-    current_material = materials[hash%materials_cnt];
-    current_material.uniforms.id.value = hash;
-
-    generate_planet_texture();
-    velocities.value.needsUpdate = true;
-    planet.material = current_material;
-}
 
 init();
 init_gui();
@@ -489,6 +291,5 @@ animate();
 
 </script>
 
-<input id="input" onkeyup="input(this.value)" autofocus/>
 
 </body></html>
