@@ -16,6 +16,7 @@ params =
 init_gui = ->
     gui = new (dat.GUI)
     gui.add(params, 'background').onChange ->background.visible = params.background
+    ###
     octaves = (val) -> current_material.uniforms.octaves.value = val
     gui.add(params, 'octaves', 1, 8, 1).onChange octaves
     equator = (val) -> current_material.uniforms.equator.value = val
@@ -40,3 +41,4 @@ init_gui = ->
     gui.addColor(params, 'spec_col').onChange spec_col
     amb_col = (val) -> current_material.uniforms.amb_col.value = p2u('amb_col')
     gui.addColor(params, 'amb_col').onChange amb_col
+    ###
