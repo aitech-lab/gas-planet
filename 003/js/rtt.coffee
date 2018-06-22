@@ -152,7 +152,7 @@ class RTT
             magFilter: THREE.NearestFilter
             format: THREE.RGBAFormat)
 
-        noise = new THREE.TextureLoader().load("palettes/jupiter_512.jpg")
+        noise = new THREE.TextureLoader().load("palettes/noise.png")
         noise.wrapS = noise.wrapT = THREE.RepeatWrapping
         
         @palettes = []
