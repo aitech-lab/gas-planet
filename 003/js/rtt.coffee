@@ -125,14 +125,6 @@ class RTT
         uniform sampler2D texture;
         uniform sampler2D palette;
 
-        float blendOverlay(float base, float blend) {
-            return base<0.5?(2.0*base*blend):(1.0-2.0*(1.0-base)*(1.0-blend));
-        }
-
-        vec3 blend(vec3 base, vec3 blend) {
-            return vec3(blendOverlay(base.r,blend.r),blendOverlay(base.g,blend.g),blendOverlay(base.b,blend.b));
-        }
-
         void main() {
             vec4 uv = texture2D(texture, vUv);
             vec4 c1 = texture2D(palette, uv.rg*4.0)*vNormal.z*vNormal.z;

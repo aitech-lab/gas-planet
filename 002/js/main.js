@@ -427,7 +427,7 @@ RTT = (function() {
 
   RTT.frag = frag_fluid;
 
-  RTT.frag_screen = "varying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\nuniform sampler2D texture;\nvoid main() {\n    gl_FragColor = texture2D(texture, vUv)*vNormal.z;\n    gl_FragColor.a = 1.0;\n}";
+  RTT.frag_screen = "varying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\nuniform sampler2D texture;\nvoid main() {\n    gl_FragColor = texture2D(texture, vUv)*vNormal.z*vNormal.z;\n    gl_FragColor.a = 1.0;\n}";
 
   return RTT;
 

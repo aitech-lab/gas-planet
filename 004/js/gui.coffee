@@ -5,12 +5,9 @@ params =
 init_gui = ->
     color_changer = (c)-> (v)->c.set v
 
-    data =
-        palette: 1
     gui = new (dat.GUI)
-    gui.add(params, 'background').onChange -> background.visible = params.background
-    gui.add(data, "palette", [1..8]).onChange (v)-> rtt.set_palette v-1
-    
+    gui.add(params, 'background').onChange ->background.visible = params.background
+
     t = gui.addFolder "Shadow mat"
     shadows_mat_data = color: shadows_mat.color.getHex()
     t.addColor(shadows_mat_data, "color").onChange color_changer shadows_mat.color
