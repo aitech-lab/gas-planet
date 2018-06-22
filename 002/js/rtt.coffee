@@ -86,7 +86,7 @@ void main() {
     // add a little "motor" in the center
     gl_FragColor.xy += (0.01*scr.xy / (dot(scr,scr)/0.1+0.3));
     
-    if(time<=0.5) init(gl_FragColor, gl_FragCoord);
+    if(time<=1.0) init(gl_FragColor, gl_FragCoord);
 }
 """
 
