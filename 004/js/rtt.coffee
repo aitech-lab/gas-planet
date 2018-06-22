@@ -27,13 +27,19 @@ void main() {
 
     vec4 c = texture2D(bufC, vUv);
     vec4 b = texture2D(bufB, vUv);
-    float m = .002;
-    vec2 vel = vec2(-(b.g-0.5)*m, (b.r-0.5)*m);
-    vec4 a = texture2D(bufA, vUv+vel);
-    float i = floor(time*0.1);
-    float f = fract(time*0.1);
+    float m = .001;
+    b-=0.5;
+    b*=m;
+    vec2 vel = b.gr*vec2(-1.0, 1.0);
+    vec4 a1 = texture2D(bufA, vUv);
+    vec4 a2 = texture2D(bufA, vUv+vel);
+    vec4 a  = (a1+a2)/2.0;
+    float i = floor(time);
+    float f = fract(time);
     float k = mix(rand2(vUv+i), rand2(vUv+i+1.0), smoothstep(0.0, 1.0, f));
-    gl_FragColor = (1.0-k)*a + k*c + (rand(vUv+time)-rand(vUv+time+1.0))/10.0;
+    float noise =(rand(vUv+time)-rand(vUv+time+1.0))*0.05;
+    a*=0.999;
+    gl_FragColor = a*(1.0-k)+c*k+noise;
     // gl_FragColor = c;
     // gl_FragColor = vec4(k);
     if(time <0.5) {
