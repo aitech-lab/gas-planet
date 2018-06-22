@@ -222,7 +222,7 @@ init_scene = function() {
     color: 0xFFFFFF,
     metalness: 0.0,
     roughness: 1.0,
-    opacity: 0.61,
+    opacity: 1.0,
     side: THREE.FrontSide,
     transparent: true,
     premultipliedAlpha: true,
@@ -232,10 +232,13 @@ init_scene = function() {
   shadows = new THREE.Mesh(g, shadows_mat);
   scene.add(shadows);
   pointLight = new THREE.PointLight(0xffffD0, 2);
-  pointLight.position.set(50, 50, 50);
+  pointLight.position.set(-50, 50, 50);
   scene.add(pointLight);
   pointLight = new THREE.PointLight(0x404080, 2);
-  pointLight.position.set(-50, -50, -50);
+  pointLight.position.set(50, -50, -50);
+  scene.add(pointLight);
+  pointLight = new THREE.PointLight(0x808040, 0.5);
+  pointLight.position.set(0, -100, 0);
   return scene.add(pointLight);
 };
 
