@@ -8,6 +8,7 @@ planet            = undefined
 background        = undefined
 rtt               = undefined
 shadows_mat       = undefined
+light_mat         = undefined
 light_1           = undefined
 light_2           = undefined
 light_3           = undefined
@@ -125,6 +126,19 @@ init_scene = ->
         blending: THREE.MultiplyBlending
     shadows = new THREE.Mesh g, shadows_mat
     scene.add shadows
+    
+    light_mat = new THREE.MeshPhysicalMaterial
+        color: 0x202020
+        metalness: 0.5
+        roughness: 0.6
+        opacity:   0.5
+        side: THREE.FrontSide
+        transparent: true
+        premultipliedAlpha: true
+        depthTest: false
+        blending: THREE.AdditiveBlending
+    light = new THREE.Mesh g, light_mat
+    scene.add light
     
     light_1 = new THREE.PointLight 0xffffD0, 2
     light_1.position.set(-50, 50, 50)
