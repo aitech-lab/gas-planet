@@ -13,6 +13,10 @@ float rand(vec2 n) {
     return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
 }
 
+float rand2(vec2 n) {
+    return 1.0-step(rand(n),0.9);
+}
+
 float noise(vec2 n) {
     const vec2 d = vec2(0.0, 1.0);
     vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
@@ -23,15 +27,15 @@ void main() {
 
     vec4 c = texture2D(bufC, vUv);
     vec4 b = texture2D(bufB, vUv);
-    float m = .01;
-    vec2 uv = vUv + vec2((b.r-0.5)*m, (b.g-0.5)*m);
-    vec4 a = texture2D(bufA, vUv+(b.gr-0.5)/200.0);
+    float m = .002;
+    vec2 vel = vec2(-(b.g-0.5)*m, (b.r-0.5)*m);
+    vec4 a = texture2D(bufA, vUv+vel);
     float i = floor(time*0.1);
     float f = fract(time*0.1);
-    float k = mix(pow(rand(vUv+i),5.), pow(rand(vUv+i+1.0),5.), smoothstep(0.0, 1.0, f));
-    k/= 1.0;
+    float k = mix(rand2(vUv+i), rand2(vUv+i+1.0), smoothstep(0.0, 1.0, f));
     gl_FragColor = (1.0-k)*a + k*c + (rand(vUv+time)-rand(vUv+time+1.0))/10.0;
-    // gl_FragColor = a;
+    // gl_FragColor = c;
+    // gl_FragColor = vec4(k);
     if(time <0.5) {
         gl_FragColor = vec4(c.rgb, 1.0);
     }
@@ -89,7 +93,7 @@ class RTT
 
         @bufB = new THREE.TextureLoader().load("textures/jupiter_1024_n.png")
         @bufB.wrapS = @bufB.wrapT = THREE.RepeatWrapping
-        @bufC = new THREE.TextureLoader().load("textures/jupiter_1024.jpg")
+        @bufC = new THREE.TextureLoader().load("textures/jupiter_1024.png")
         @bufC.wrapS = @bufC.wrapT = THREE.RepeatWrapping
         
         @mat = new THREE.ShaderMaterial

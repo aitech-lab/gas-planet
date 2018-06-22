@@ -331,7 +331,7 @@ init = function() {
   return onWindowResize();
 };
 
-frag_fluid = "\nuniform sampler2D bufA; // backbuff\nuniform sampler2D bufB; // velocity\nuniform sampler2D bufC; // textture\nuniform float time;\n\nvarying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\n\nfloat rand(vec2 n) {\n    return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);\n}\n\nfloat noise(vec2 n) {\n    const vec2 d = vec2(0.0, 1.0);\n    vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));\n    return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);\n}\n\nvoid main() {\n\n    vec4 c = texture2D(bufC, vUv);\n    vec4 b = texture2D(bufB, vUv);\n    float m = .01;\n    vec2 uv = vUv + vec2((b.r-0.5)*m, (b.g-0.5)*m);\n    vec4 a = texture2D(bufA, vUv+(b.gr-0.5)/200.0);\n    float i = floor(time*0.1);\n    float f = fract(time*0.1);\n    float k = mix(pow(rand(vUv+i),5.), pow(rand(vUv+i+1.0),5.), smoothstep(0.0, 1.0, f));\n    k/= 1.0;\n    gl_FragColor = (1.0-k)*a + k*c + (rand(vUv+time)-rand(vUv+time+1.0))/10.0;\n    // gl_FragColor = a;\n    if(time <0.5) {\n        gl_FragColor = vec4(c.rgb, 1.0);\n    }\n}";
+frag_fluid = "\nuniform sampler2D bufA; // backbuff\nuniform sampler2D bufB; // velocity\nuniform sampler2D bufC; // textture\nuniform float time;\n\nvarying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\n\nfloat rand(vec2 n) {\n    return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);\n}\n\nfloat rand2(vec2 n) {\n    return 1.0-step(rand(n),0.9);\n}\n\nfloat noise(vec2 n) {\n    const vec2 d = vec2(0.0, 1.0);\n    vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));\n    return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);\n}\n\nvoid main() {\n\n    vec4 c = texture2D(bufC, vUv);\n    vec4 b = texture2D(bufB, vUv);\n    float m = .002;\n    vec2 vel = vec2(-(b.g-0.5)*m, (b.r-0.5)*m);\n    vec4 a = texture2D(bufA, vUv+vel);\n    float i = floor(time*0.1);\n    float f = fract(time*0.1);\n    float k = mix(rand2(vUv+i), rand2(vUv+i+1.0), smoothstep(0.0, 1.0, f));\n    gl_FragColor = (1.0-k)*a + k*c + (rand(vUv+time)-rand(vUv+time+1.0))/10.0;\n    // gl_FragColor = c;\n    // gl_FragColor = vec4(k);\n    if(time <0.5) {\n        gl_FragColor = vec4(c.rgb, 1.0);\n    }\n}";
 
 RTT = (function() {
   class RTT {
@@ -363,7 +363,7 @@ RTT = (function() {
       });
       this.bufB = new THREE.TextureLoader().load("textures/jupiter_1024_n.png");
       this.bufB.wrapS = this.bufB.wrapT = THREE.RepeatWrapping;
-      this.bufC = new THREE.TextureLoader().load("textures/jupiter_1024.jpg");
+      this.bufC = new THREE.TextureLoader().load("textures/jupiter_1024.png");
       this.bufC.wrapS = this.bufC.wrapT = THREE.RepeatWrapping;
       this.mat = new THREE.ShaderMaterial({
         uniforms: {
