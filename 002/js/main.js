@@ -331,7 +331,7 @@ init = function() {
   return onWindowResize();
 };
 
-redefines = "#define iChannel0 bufA\n#define iChannel1 bufB\n#define iChannel2 bufC\n#define texture texture2D\n\n#define Res  vec3(512.0)\n#define Res1 vec3(256.0)\n\nuniform sampler2D bufA;\nuniform sampler2D bufB;\nuniform sampler2D bufC;\nuniform float time;\n";
+redefines = "#define iChannel0 bufA\n#define iChannel1 bufB\n#define iChannel2 bufC\n#define texture texture2D\n\n#define Res  vec3(512.0)\n#define Res1 vec3(512.0)\n\nuniform sampler2D bufA;\nuniform sampler2D bufB;\nuniform sampler2D bufC;\nuniform float time;\n";
 
 frag_fluid = `\n${redefines}\n\n#define RotNum 3\n#define angRnd 1.0\n#define posRnd 0.0\n\nconst float ang = 2.0*3.1415926535/float(RotNum);\nmat2 m = mat2(cos(ang),sin(ang),-sin(ang),cos(ang));\n\nfloat hash(float seed) { return fract(sin(seed)*158.5453 ); }\nvec4 getRand4(float seed) { return vec4(hash(seed),hash(seed+123.21),hash(seed+234.32),hash(seed+453.54)); }\nvec4 randS(vec2 uv) {\n    //return getRand4(uv.y+uv.x*1234.567)-vec4(0.5);\n    return texture(iChannel1,uv*Res.xy/Res1.xy)-vec4(0.5);\n}\n\nfloat getRot(vec2 uv, float sc)\n{\n    float ang2 = angRnd*randS(uv).x*ang;\n    vec2 p = vec2(cos(ang2),sin(ang2));\n    float rot=0.0;\n    for(int i=0;i<RotNum;i++)\n    {\n        vec2 p2 = (p+posRnd*randS(uv+p*sc).xy)*sc;\n        vec2 v = texture(iChannel0,fract(uv+p2)).xy-vec2(0.5);\n        rot+=cross(vec3(v,0.0),vec3(p2,0.0)).z/dot(p2,p2);\n        p = m*p;\n    }\n    rot/=float(RotNum);\n    return rot;\n}\n\nvoid init( out vec4 fragColor, in vec4 fragCoord ) {\n    vec2 uv = fragCoord.xy / Res.xy;\n    fragColor = texture(iChannel2,uv);\n}\n\nvoid main() {\n    vec2 uv = gl_FragCoord.xy / Res.xy;\n    vec2 scr=uv*2.0-vec2(1.0);\n    \n    float sc=1.0/max(Res.x,Res.y);\n    vec2 v=vec2(0);\n    for(int level=0;level<20;level++)\n    {\n        if ( sc > 0.7 ) break;\n        float ang2 = angRnd*ang*randS(uv).y;\n        vec2 p = vec2(cos(ang2),sin(ang2));\n        for(int i=0;i<RotNum;i++)\n        {\n            vec2 p2=p*sc;\n            float rot=getRot(uv+p2,sc);\n            //v+=cross(vec3(0,0,rot),vec3(p2,0.0)).xy;\n            v+=p2.yx*rot*vec2(-1,1); //maybe faster than above\n            p = m*p;\n        }\n          sc*=2.0;\n    }\n    \n    //v.y+=scr.y*0.1;\n    \n    //v.x+=(1.0-scr.y*scr.y)*0.8;\n    \n    //v/=float(RotNum)/3.0;\n    \n    gl_FragColor=texture(iChannel0,fract(uv+v*3.0/Res.x));\n    \n    // add a little "motor" in the center\n    gl_FragColor.xy += (0.01*scr.xy / (dot(scr,scr)/0.1+0.3));\n    \n    if(time<=1.0) init(gl_FragColor, gl_FragCoord);\n}`;
 
@@ -358,12 +358,12 @@ RTT = (function() {
       this.scene = new THREE.Scene;
       this.textureA = new THREE.WebGLRenderTarget(this.resolution, this.resolution, {
         minFilter: THREE.LinearFilter,
-        magFilter: THREE.NearestFilter,
+        magFilter: THREE.LinearFilter,
         format: THREE.RGBAFormat
       });
       this.textureB = new THREE.WebGLRenderTarget(this.resolution, this.resolution, {
         minFilter: THREE.LinearFilter,
-        magFilter: THREE.NearestFilter,
+        magFilter: THREE.LinearFilter,
         format: THREE.RGBAFormat
       });
       noise = new THREE.TextureLoader().load("palettes/noise.png");

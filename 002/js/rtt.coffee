@@ -5,7 +5,7 @@ redefines = """
 #define texture texture2D
 
 #define Res  vec3(512.0)
-#define Res1 vec3(256.0)
+#define Res1 vec3(512.0)
 
 uniform sampler2D bufA;
 uniform sampler2D bufB;
@@ -147,12 +147,12 @@ class RTT
 
         @textureA = new THREE.WebGLRenderTarget(@resolution, @resolution,
             minFilter: THREE.LinearFilter
-            magFilter: THREE.NearestFilter
+            magFilter: THREE.LinearFilter
             format: THREE.RGBAFormat)
 
         @textureB = new THREE.WebGLRenderTarget(@resolution, @resolution,
             minFilter: THREE.LinearFilter
-            magFilter: THREE.NearestFilter
+            magFilter: THREE.LinearFilter
             format: THREE.RGBAFormat)
 
         noise = new THREE.TextureLoader().load("palettes/noise.png")
