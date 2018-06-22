@@ -12,7 +12,7 @@ light_1           = undefined
 light_2           = undefined
 light_3           = undefined
 
-planet_radius     = 0.8
+planet_radius     = 1.2
 planet_details    = 50
 planet_resolution = 256
 pr_w              = planet_resolution
@@ -84,7 +84,7 @@ render = ->
 
 init_renderers = ->
     
-    renderer = new THREE.WebGLRenderer
+    renderer = new THREE.WebGLRenderer alpha:true
     renderer.setPixelRatio window.devicePixelRatio
 
     rtt = new RTT

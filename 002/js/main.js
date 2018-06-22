@@ -97,7 +97,7 @@ light_2 = void 0;
 
 light_3 = void 0;
 
-planet_radius = 0.8;
+planet_radius = 1.2;
 
 planet_details = 50;
 
@@ -225,7 +225,9 @@ render = function() {
 };
 
 init_renderers = function() {
-  renderer = new THREE.WebGLRenderer;
+  renderer = new THREE.WebGLRenderer({
+    alpha: true
+  });
   renderer.setPixelRatio(window.devicePixelRatio);
   rtt = new RTT;
   container = document.getElementById('container');
@@ -400,7 +402,7 @@ RTT = (function() {
 
   RTT.frag = frag_fluid;
 
-  RTT.frag_screen = "varying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\nuniform sampler2D texture;\nvoid main() {\n    gl_FragColor = texture2D(texture, vUv)*vNormal.z;\n}";
+  RTT.frag_screen = "varying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\nuniform sampler2D texture;\nvoid main() {\n    gl_FragColor = texture2D(texture, vUv)*vNormal.z;\n    gl_FragColor.a = 1.0;\n}";
 
   return RTT;
 
