@@ -18,9 +18,9 @@ frag_fluid = """
 
 #{redefines}
 
-#define RotNum 3
+#define RotNum 5
 #define angRnd 1.0
-#define posRnd 1.0
+#define posRnd 0.0
 
 const float ang = 2.0*3.1415926535/float(RotNum);
 mat2 m = mat2(cos(ang),sin(ang),-sin(ang),cos(ang));
@@ -59,23 +59,24 @@ void main() {
     
     float sc=1.0/max(Res.x,Res.y);
     vec2 v=vec2(0);
-    for(int level=0;level<20;level++)
-    {
+    for(int level=0;level<20;level++) {
         if ( sc > 0.7 ) break;
         float ang2 = angRnd*ang*randS(uv).y;
         vec2 p = vec2(cos(ang2),sin(ang2));
-        for(int i=0;i<RotNum;i++)
-        {
+        for(int i=0;i<RotNum;i++) {
             vec2 p2=p*sc;
             float rot=getRot(uv+p2,sc);
             //v+=cross(vec3(0,0,rot),vec3(p2,0.0)).xy;
             v+=p2.yx*rot*vec2(-1,1); //maybe faster than above
             p = m*p;
         }
-          sc*=2.0;
+        sc*=2.0;
     }
        
     gl_FragColor=texture(iChannel0, fract(uv+v*3.0/Res.x));
+
+    //float k = 0.01;
+    //gl_FragColor=(1.0-k)*gl_FragColor + k*texture(iChannel1, gl_FragCoord.xy/512.0);
     
     // add a little "motor" in the center
     gl_FragColor.xy += (0.01*scr.xy / (dot(scr,scr)/0.1+0.3));
@@ -162,7 +163,7 @@ class RTT
             magFilter: THREE.LinearFilter
             format: THREE.RGBAFormat)
 
-        noise = new THREE.TextureLoader().load("palettes/noise.png")
+        noise = new THREE.TextureLoader().load("palettes/velocity.png")
         noise.wrapS = noise.wrapT = THREE.RepeatWrapping
         
         @palettes = []
