@@ -20,7 +20,7 @@ frag_fluid = """
 
 #define RotNum 3
 #define angRnd 1.0
-#define posRnd 0.0
+#define posRnd 1.0
 
 const float ang = 2.0*3.1415926535/float(RotNum);
 mat2 m = mat2(cos(ang),sin(ang),-sin(ang),cos(ang));
@@ -135,8 +135,7 @@ class RTT
         void main() {
             vec4 uv = texture2D(texture, vUv);
             vec4 c1 = texture2D(palette, uv.rg*4.0)*vNormal.z*vNormal.z;
-            vec4 c2 = texture2D(palette, uv.gb*4.0)*vNormal.z*vNormal.z;
-            gl_FragColor = vec4(blend(c1.rgb, c2.rgb),1.0);
+            gl_FragColor = vec4(c1.rgb, 1.0);
         }"""
         
     constructor: ->

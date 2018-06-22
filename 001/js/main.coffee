@@ -5,7 +5,7 @@ scene             = undefined
 renderer          = undefined
 clock             = undefined
 planet            = undefined
-planet_radius     = 0.8
+planet_radius     = 1.2
 planet_details    = 50
 planet_resolution = 256
 pr_w              = planet_resolution
@@ -220,7 +220,7 @@ init_scene = ->
     scene    = new THREE.Scene
     clock    = new THREE.Clock
 
-    renderer = new (THREE.WebGLRenderer)
+    renderer = new THREE.WebGLRenderer alpha:true
     renderer.setPixelRatio window.devicePixelRatio
 
     container = document.getElementById 'container'
@@ -257,10 +257,9 @@ init = ->
         planet.rotation.x = 3.141 / 8.0
         scene.add planet
         
-        g = new THREE.PlaneBufferGeometry(5,2.5,10)
-        p = new THREE.Mesh g, current_material
-
-        scene.add p
+        # g = new THREE.PlaneBufferGeometry(5,2.5,10)
+        # p = new THREE.Mesh g, current_material
+        # scene.add p
         
 
 window.addEventListener "load", ->
