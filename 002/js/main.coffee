@@ -8,6 +8,9 @@ planet            = undefined
 background        = undefined
 rtt               = undefined
 shadows_mat       = undefined
+light_1           = undefined
+light_2           = undefined
+light_3           = undefined
 
 planet_radius     = 0.8
 planet_details    = 50
@@ -108,7 +111,7 @@ init_scene = ->
     planet.rotation.x = 3.141 / 8.0
     scene.add planet
 
-    g = new THREE.SphereBufferGeometry(planet_radius*1.1, planet_details, planet_details)
+    g = new THREE.SphereBufferGeometry(planet_radius*1.001, planet_details, planet_details)
     shadows_mat = new THREE.MeshPhysicalMaterial
         map: null
         color: 0xFFFFFF
@@ -123,17 +126,17 @@ init_scene = ->
     shadows = new THREE.Mesh g, shadows_mat
     scene.add shadows
     
-    pointLight = new THREE.PointLight 0xffffD0, 2
-    pointLight.position.set(-50, 50, 50)
-    scene.add pointLight
+    light_1 = new THREE.PointLight 0xffffD0, 2
+    light_1.position.set(-50, 50, 50)
+    scene.add light_1
 
-    pointLight = new THREE.PointLight 0x404080, 2
-    pointLight.position.set(50, -50, -50)
-    scene.add pointLight
+    light_2 = new THREE.PointLight 0x404080, 2
+    light_2.position.set(50, -50, -50)
+    scene.add light_2
     
-    pointLight = new THREE.PointLight 0x808040, 0.5
-    pointLight.position.set(0, -100, 0)
-    scene.add pointLight
+    light_3 = new THREE.PointLight 0x808040, 0.5
+    light_3.position.set(0, -100, 0)
+    scene.add light_3
 
 init = ->
 
