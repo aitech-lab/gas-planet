@@ -110,18 +110,26 @@ class RTT
 
     @vert: """
         varying vec2 vUv;
+        varying vec3 vPos;
+        varying vec3 vNormal;
         void main() {
             vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+            vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+            gl_Position = projectionMatrix * mvPosition; 
+        	gl_Position     = projectionMatrix * mvPosition;
+        	vPos            = vec3(mvPosition)/mvPosition.w;
+        	vNormal         = vec3(normalMatrix * normal);
         }"""
         
     @frag: frag_fluid
 
     @frag_screen: """
         varying vec2 vUv;
+        varying vec3 vPos;
+        varying vec3 vNormal;
         uniform sampler2D texture;
         void main() {
-            gl_FragColor = texture2D(texture, vUv);
+            gl_FragColor = texture2D(texture, vUv)*vNormal.z;
         }"""
         
     constructor: ->

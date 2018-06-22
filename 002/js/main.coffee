@@ -7,6 +7,7 @@ clock             = undefined
 planet            = undefined
 background        = undefined
 rtt               = undefined
+shadows_mat       = undefined
 
 planet_radius     = 0.8
 planet_details    = 50
@@ -101,11 +102,35 @@ init_scene = ->
     background.visible = params.background
     scene.add background
 
+        
     g = new THREE.SphereBufferGeometry(planet_radius, planet_details, planet_details)
     planet = new THREE.Mesh g, rtt.mat_screen
     planet.rotation.x = 3.141 / 8.0
     scene.add planet
 
+    g = new THREE.SphereBufferGeometry(planet_radius*1.1, planet_details, planet_details)
+    shadows_mat = new THREE.MeshPhysicalMaterial
+        map: null
+        color: 0xFFFFFF
+        metalness: 0.0
+        roughness: 1.0
+        opacity: 0.61
+        side: THREE.FrontSide
+        transparent: true
+        premultipliedAlpha: true
+        depthTest: false
+        blending: THREE.MultiplyBlending
+    shadows = new THREE.Mesh g, shadows_mat
+    scene.add shadows
+    
+    pointLight = new THREE.PointLight 0xffffD0, 2
+    pointLight.position.set(50, 50, 50)
+    scene.add pointLight
+
+    pointLight = new THREE.PointLight 0x404080, 2
+    pointLight.position.set(-50, -50, -50)
+    scene.add pointLight
+    
 init = ->
 
     console.log "Init"
@@ -113,16 +138,15 @@ init = ->
     if !Detector.webgl
         Detector.addGetWebGLMessage()
     
-    init_planet_texture()
-    generate_planet_texture()
+    # init_planet_texture()
+    # generate_planet_texture()
+    # velocities = type: 't', value: new THREE.Texture(cvs)
+    # velocities.value.wrapS = velocities.value.wrapT = THREE.RepeatWrapping
+    # velocities.value.needsUpdate = true
 
     init_renderers()
     init_scene()
 
-    velocities = type: 't', value: new THREE.Texture(cvs)
-
-    velocities.value.wrapS = velocities.value.wrapT = THREE.RepeatWrapping
-    velocities.value.needsUpdate = true
 
     
     #    shader_load "planet"
