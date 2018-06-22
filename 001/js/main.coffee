@@ -80,8 +80,7 @@ text_load = (url) ->
 shader_load = (name)->
     console.log "Load shader #{name}"
     Promise.all [text_load("shaders/#{name}.vert"), text_load("shaders/#{name}.frag")]
-    
-    
+     
 init_materilas = (vert, frag)->
     console.log "Init materials"
     for i in [1..materials_cnt]
@@ -116,10 +115,9 @@ init_materilas = (vert, frag)->
 
 
 onWindowResize = (event)->
-    camera.taspect = window.innerWidth / window.innerHeight
+    camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
     renderer.setSize window.innerWidth, window.innerHeight
-
 
 # Градиент скоростей
 
@@ -195,12 +193,8 @@ animate = ->
 render = ->
     delta = clock.getDelta()
     time.value = clock.elapsedTime
-    i = 0
-    while i < scene.children.length
-        object = scene.children[i]
-        object.rotation.y += delta * 0.1
-        #object.rotation.x += delta * 0.5 * ( i % 2 ? -1 : 1 );
-        i++
+    if planet?
+        planet.rotation.y += delta * 0.1
     renderer.render scene, camera
 
 
@@ -213,13 +207,29 @@ input = (val) ->
     velocities.value.needsUpdate = true
     planet.material = current_material
 
-
-
 String::hashCode = ->
     @split('').reduce ((a, b) ->
         a = (a << 5) - a + b.charCodeAt(0)
         a & a
     ), 0
+
+init_scene = ->
+    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 3000)
+    camera.position.z = 4
+    
+    scene    = new THREE.Scene
+    clock    = new THREE.Clock
+
+    renderer = new (THREE.WebGLRenderer)
+    renderer.setPixelRatio window.devicePixelRatio
+
+    container = document.getElementById 'container'
+    container.appendChild renderer.domElement
+
+    stats = new Stats
+    container.appendChild stats.dom
+    onWindowResize()
+    window.addEventListener 'resize', onWindowResize, false
 
 init = ->
 
@@ -231,13 +241,8 @@ init = ->
     init_planet_texture()
     generate_planet_texture()
 
-    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 3000)
-    camera.position.z = 4
+    init_scene()
     
-    scene    = new THREE.Scene
-    clock    = new THREE.Clock
-    geometry = new THREE.SphereBufferGeometry(planet_radius, planet_details, planet_details)
-
     velocities = type: 't', value: new THREE.Texture(cvs)
 
     velocities.value.wrapS = velocities.value.wrapT = THREE.RepeatWrapping
@@ -246,20 +251,17 @@ init = ->
     shader_load "planet"
     .then (shaders)->
         init_materilas shaders[0], shaders[1]
-        planet = new THREE.Mesh geometry, current_material
+
+        g = new THREE.SphereBufferGeometry(planet_radius, planet_details, planet_details)
+        planet = new THREE.Mesh g, current_material
         planet.rotation.x = 3.141 / 8.0
         scene.add planet
         
-    renderer = new (THREE.WebGLRenderer)
-    renderer.setPixelRatio window.devicePixelRatio
+        g = new THREE.PlaneBufferGeometry(5,2.5,10)
+        p = new THREE.Mesh g, current_material
 
-    container = document.getElementById 'container'
-    container.appendChild renderer.domElement
-
-    stats = new Stats
-    container.appendChild stats.dom
-    onWindowResize()
-    window.addEventListener 'resize', onWindowResize, false
+        scene.add p
+        
 
 window.addEventListener "load", ->
     init()
