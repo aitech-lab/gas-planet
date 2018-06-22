@@ -365,12 +365,14 @@ RTT = (function() {
       this.scene = new THREE.Scene;
       this.textureA = new THREE.WebGLRenderTarget(this.resolution, this.resolution, {
         minFilter: THREE.LinearFilter,
-        magFilter: THREE.NearestFilter,
+        //magFilter: THREE.NearestFilter
+        magFilter: THREE.LinearFilter,
         format: THREE.RGBAFormat
       });
       this.textureB = new THREE.WebGLRenderTarget(this.resolution, this.resolution, {
         minFilter: THREE.LinearFilter,
-        magFilter: THREE.NearestFilter,
+        //magFilter: THREE.NearestFilter
+        magFilter: THREE.LinearFilter,
         format: THREE.RGBAFormat
       });
       noise = new THREE.TextureLoader().load("palettes/noise.png");
@@ -446,7 +448,7 @@ RTT = (function() {
 
   RTT.frag = frag_fluid;
 
-  RTT.frag_screen = "varying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\nuniform sampler2D texture;\nuniform sampler2D palette;\nvoid main() {\n    vec4 col = texture2D(texture, vUv);\n    gl_FragColor = texture2D(palette, col.rg*4.0)*vNormal.z*vNormal.z;\n    \n    gl_FragColor.a = 1.0;\n}";
+  RTT.frag_screen = "varying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\nuniform sampler2D texture;\nuniform sampler2D palette;\n\nfloat blendOverlay(float base, float blend) {\n    return base<0.5?(2.0*base*blend):(1.0-2.0*(1.0-base)*(1.0-blend));\n}\n\nvec3 blend(vec3 base, vec3 blend) {\n    return vec3(blendOverlay(base.r,blend.r),blendOverlay(base.g,blend.g),blendOverlay(base.b,blend.b));\n}\n\nvoid main() {\n    vec4 uv = texture2D(texture, vUv);\n    vec4 c1 = texture2D(palette, uv.rg*4.0)*vNormal.z*vNormal.z;\n    vec4 c2 = texture2D(palette, uv.gb*4.0)*vNormal.z*vNormal.z;\n    gl_FragColor = vec4(blend(c1.rgb, c2.rgb),1.0);\n}";
 
   return RTT;
 

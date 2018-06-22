@@ -123,11 +123,20 @@ class RTT
         varying vec3 vNormal;
         uniform sampler2D texture;
         uniform sampler2D palette;
+
+        float blendOverlay(float base, float blend) {
+            return base<0.5?(2.0*base*blend):(1.0-2.0*(1.0-base)*(1.0-blend));
+        }
+
+        vec3 blend(vec3 base, vec3 blend) {
+            return vec3(blendOverlay(base.r,blend.r),blendOverlay(base.g,blend.g),blendOverlay(base.b,blend.b));
+        }
+
         void main() {
-            vec4 col = texture2D(texture, vUv);
-            gl_FragColor = texture2D(palette, col.rg*4.0)*vNormal.z*vNormal.z;
-            
-            gl_FragColor.a = 1.0;
+            vec4 uv = texture2D(texture, vUv);
+            vec4 c1 = texture2D(palette, uv.rg*4.0)*vNormal.z*vNormal.z;
+            vec4 c2 = texture2D(palette, uv.gb*4.0)*vNormal.z*vNormal.z;
+            gl_FragColor = vec4(blend(c1.rgb, c2.rgb),1.0);
         }"""
         
     constructor: ->
@@ -144,12 +153,14 @@ class RTT
 
         @textureA = new THREE.WebGLRenderTarget(@resolution, @resolution,
             minFilter: THREE.LinearFilter
-            magFilter: THREE.NearestFilter
+            #magFilter: THREE.NearestFilter
+            magFilter: THREE.LinearFilter
             format: THREE.RGBAFormat)
 
         @textureB = new THREE.WebGLRenderTarget(@resolution, @resolution,
             minFilter: THREE.LinearFilter
-            magFilter: THREE.NearestFilter
+            #magFilter: THREE.NearestFilter
+            magFilter: THREE.LinearFilter
             format: THREE.RGBAFormat)
 
         noise = new THREE.TextureLoader().load("palettes/noise.png")
