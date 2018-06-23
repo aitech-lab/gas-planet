@@ -60,6 +60,7 @@ init_gui = ->
     gui.add(params, 'cnt_width', 0.1, 8.0).onChange cnt_width
     cnt_alpha = (val) -> current_material.uniforms.cnt_alpha.value = val
     gui.add(params, 'cnt_alpha', 0.1, 2.0).onChange cnt_alpha
+
     cnt_col1 = (val) -> current_material.uniforms.cnt_col1.value = p2u('cnt_col1')
     gui.addColor(params, 'cnt_col1').onChange cnt_col1
     cnt_col2 = (val) -> current_material.uniforms.cnt_col2.value = p2u('cnt_col2')
