@@ -121,7 +121,7 @@ void main() {
     
 	vec2 p = vUv;// gl_FragCoord / resolution.xy;
 	vec2 q = (p*2.0-vec2(1.0))*u_scale;// (-resolution.xy + 2.0*(gl_FragCoord+of)) /resolution.y;
-    q.x-=u_time*0.1;	
+    q.x-=u_time*0.2;	
     vec2 o, n;
     float f = func(q, o, n);
     vec3 col = vec3(0.0);
