@@ -14,13 +14,16 @@ float rand(vec2 n) {
 }
 
 float rand2(vec2 n) {
-    return 1.0-step(rand(n),0.95);
+    return 1.0-step(rand(n),0.9);
 }
 
 float noise(vec2 n) {
     const vec2 d = vec2(0.0, 1.0);
     vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
     return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);
+}
+vec3 overlay(vec3 c1, vec3 c2) {
+    return mix(1.0 - 2.0 * (1.0 - c1) * (1.0 - c2), 2.0 * c1 * c2, step(c1, vec3(0.5)));
 }
 
 void main() {
@@ -31,9 +34,11 @@ void main() {
     b-=0.5;
     b*=m;
     vec2 vel = b.gr*vec2(-1.0, 1.0);
-    vec4 a1 = texture2D(bufA, vUv);
-    vec4 a2 = texture2D(bufA, vUv+vel);
-    vec4 a  = (a1+a2)/2.0;
+
+    //vec4 a = texture2D(bufA, vUv);
+    //for(float i=-2.0; i<2.0;i+=0.2) a += (texture2D(bufA, vUv+vel*i)-a)/2.0;
+    vec4 a = texture2D(bufA, vUv+vel);
+    //vec4 a = vec4(overlay(a1.rgb,a2.rgb),1.0);
     float i = floor(time);
     float f = fract(time);
     float k = mix(rand2(vUv+i), rand2(vUv+i+1.0), smoothstep(0.0, 1.0, f));
