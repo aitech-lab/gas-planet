@@ -14,7 +14,7 @@ float rand(vec2 n) {
 }
 
 float rand2(vec2 n) {
-    return 1.0-step(rand(n),0.9);
+    return 1.0-step(rand(n),0.95);
 }
 
 float noise(vec2 n) {
@@ -38,7 +38,7 @@ void main() {
     float f = fract(time);
     float k = mix(rand2(vUv+i), rand2(vUv+i+1.0), smoothstep(0.0, 1.0, f));
     float noise =(rand(vUv+time)-rand(vUv+time+1.0))*0.05;
-    a*=0.999;
+    // a*=0.999;
     gl_FragColor = a*(1.0-k)+c*k+noise;
     // gl_FragColor = c;
     // gl_FragColor = vec4(k);
