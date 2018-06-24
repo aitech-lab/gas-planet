@@ -36,6 +36,17 @@ varying vec2 vUv;
 varying vec3 vPos;
 varying vec3 vNormal;
 
+#define pal1 pal( c.r, vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.0,0.33,0.67) )
+#define pal2 pal( c.r, vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.0,0.10,0.20) )
+#define pal3 pal( c.r, vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,1.0), vec3(0.3,0.20,0.20) )
+#define pal4 pal( c.r, vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,1.0,0.5), vec3(0.8,0.90,0.30) )
+#define pal5 pal( c.r, vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(1.0,0.7,0.4), vec3(0.0,0.15,0.20) )
+#define pal6 pal( c.r, vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.5), vec3(2.0,1.0,0.0), vec3(0.5,0.20,0.25) )
+#define pal7 pal( c.r, vec3(0.8,0.5,0.4), vec3(0.2,0.4,0.2), vec3(2.0,1.0,1.0), vec3(0.0,0.25,0.25) )
+vec3 pal( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d ) {
+        return a + b*cos( 6.28318*(c*t+d) );
+}
+
 float rand(vec2 n) {
     return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
 }
@@ -85,14 +96,15 @@ void main() {
 
     vec4 n = normalize(b*2.0-1.0);
     vec4 l = normalize(vec4(1.0, -1.0, 1.0,0.0));
-    float  bump = dot(n,l);
+    float  bump = dot(n, l);
+    //c = vec4(pal2, 1.0);   
     c = c-bump/4.0;
 
     //vec4 a = texture2D(bufA, vUv);
     //for(float i=-2.0; i<2.0;i+=0.2) a += (texture2D(bufA, vUv+vel*i)-a)/2.0;
     vec4 a = texture2D(bufA, vUv+vel);
     vec4 s = sharp(bufA, vUv);
-    a = mix(a,s,0.002); 
+    a = mix(a, s, 0.002); 
     // n = normalize(a*2.0-1.0);
     // bump = max(dot(n,l),0.0);
     //vec4 a = vec4(overlay(a1.rgb,a2.rgb),1.0);
