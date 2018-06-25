@@ -1,30 +1,30 @@
 // Created by inigo quilez - iq/2014
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 
-vec4 texture0( in vec2 x )
-{
+
+// sampler
+vec4 texture0( in vec2 x ) {
     //return texture( iChannel0, x );
     vec2 res = iChannelResolution[0].xy;
     vec2 u = x*res - 0.5;
     vec2 p = floor(u);
     vec2 f = fract(u);
-    f = f*f*(3.0-2.0*f);    
+    f = f*f*(3.0-2.0*f);
+    
     vec4 a = texture( iChannel0, (p+vec2(0.5,0.5))/res, -64.0 );
-	vec4 b = texture( iChannel0, (p+vec2(1.5,0.5))/res, -64.0 );
-	vec4 c = texture( iChannel0, (p+vec2(0.5,1.5))/res, -64.0 );
-	vec4 d = texture( iChannel0, (p+vec2(1.5,1.5))/res, -64.0 );
-    return mix(mix(a,b,f.x), mix(c,d,f.x),f.y);
+    vec4 b = texture( iChannel0, (p+vec2(1.5,0.5))/res, -64.0 );
+    vec4 c = texture( iChannel0, (p+vec2(0.5,1.5))/res, -64.0 );
+    vec4 d = texture( iChannel0, (p+vec2(1.5,1.5))/res, -64.0 );
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
     
-vec2 flow( vec2 uv, in mat2 m )
-{
+vec2 flow( vec2 uv, in mat2 m ) {
     for( int i=0; i<50; i++ )
         uv += 0.00015 * m * (-1.0+2.0*texture0(0.5*uv).xz);
     return uv;
 }
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 p = fragCoord.xy / iResolution.xy;
 
     // animate
@@ -65,3 +65,4 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     fragColor = vec4( col, 1.0 );
 }
+
