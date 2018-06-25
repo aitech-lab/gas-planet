@@ -35,12 +35,15 @@ vec4 sharp(in sampler2D txt, in vec2 pos) {
 void main() {
 
     vec4 c = texture2D(bufC, vUv);
-    vec4 b = texture2D(bufB, vUv);
-    float m = .0001*u_flow_spd;
-    
-    b*=(b-0.5)*m;
-    vec2 vel = b.gr*vec2(-1.0, 1.0);
-    vec2 uv = vUv+vel;
+
+    vec2 uv = vUv;
+    for(int i=0; i<20; i++) {
+        vec4 b = texture2D(bufB, uv);
+        float m = .00001*u_flow_spd;
+        b*=(b-0.5)*m;
+        vec2 vel = b.gr*vec2(-1.0, 1.0);
+        uv+= vel;
+    }
     vec4 a = texture2D(bufA, uv);
     vec4 d = sharp(bufA, uv);
     float i = floor(time);
