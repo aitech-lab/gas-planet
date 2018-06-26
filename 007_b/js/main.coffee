@@ -79,6 +79,7 @@ init_scene = ->
         u_time:  type: 'f' , value: 0.0
         u_scale: type: 'f' , value: 4.0
         u_speed: type: 'f' , value: 1.0
+        u_bump : type: 'f' , value: 1.0
    
     for c in [1..4]
         uniforms["u_col#{c}"] = type: 'v3', value: p2u("u_col#{c}")

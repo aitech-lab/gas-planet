@@ -6,6 +6,7 @@ params =
     u_col4: [255*1.0 |0, 255*0.7 |0, 255*0.6 |0]
     u_scale: 4.0
     u_speed: 1.0
+    u_bump: 1.0
     u_fbm1: 0.0
     u_fbm2: 0.5000
     u_fbm3: 2.02
@@ -25,8 +26,9 @@ init_gui = ->
     gui = new (dat.GUI)
     gui.add(params, 'background').onChange ->background.visible = params.background
 
-    gui.add(params, 'u_scale', 0.1, 20.0, 0.1).onChange (v)->material.uniforms.u_scale.value = v
-    gui.add(params, 'u_speed', 0.1, 20.0, 0.1).onChange (v)->material.uniforms.u_speed.value = v
+    gui.add(params, 'u_scale', 0.1, 20.0, 0.1 ).onChange (v)->material.uniforms.u_scale.value = v
+    gui.add(params, 'u_speed', 0.1, 20.0, 0.1 ).onChange (v)->material.uniforms.u_speed.value = v
+    gui.add(params, 'u_bump' ,-2.0,  2.0, 0.01).onChange (v)->material.uniforms.u_bump.value  = v
 
     u_col = (name)->
         (val)-> material.uniforms[name].value = p2u(name)

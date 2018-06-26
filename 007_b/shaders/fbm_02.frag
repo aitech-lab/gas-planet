@@ -12,6 +12,8 @@ uniform vec3 u_col2;
 uniform vec3 u_col3;
 uniform vec3 u_col4;
 
+uniform float u_bump;
+
 uniform float u_fbm1;
 uniform float u_fbm2;
 uniform float u_fbm3;
@@ -85,11 +87,11 @@ void main() {
 
     vec3 col = colc;
     col += u_col4*8.0*abs(2.0*gc-ga-gb);
-    //col *= 1.0+0.2*nor.y*nor.y;
-    //col += 0.05*nor.y*nor.y*nor.y;
+    col *= 1.0+0.2*nor.y*nor.y;
+    col += 0.05*nor.y*nor.y*nor.y;
      
     vec2 q = vUv;
     col *= pow(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.1);
     
-    gl_FragColor = vec4( col, 1.0 );
+    gl_FragColor = vec4(mix(colc, col, u_bump), 1.0 );
 }

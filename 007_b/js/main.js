@@ -36,6 +36,7 @@ params = {
   u_col4: [255 * 1.0 | 0, 255 * 0.7 | 0, 255 * 0.6 | 0],
   u_scale: 4.0,
   u_speed: 1.0,
+  u_bump: 1.0,
   u_fbm1: 0.0,
   u_fbm2: 0.5000,
   u_fbm3: 2.02,
@@ -67,6 +68,9 @@ init_gui = function() {
   });
   gui.add(params, 'u_speed', 0.1, 20.0, 0.1).onChange(function(v) {
     return material.uniforms.u_speed.value = v;
+  });
+  gui.add(params, 'u_bump', -2.0, 2.0, 0.01).onChange(function(v) {
+    return material.uniforms.u_bump.value = v;
   });
   u_col = function(name) {
     return function(val) {
@@ -238,6 +242,10 @@ init_scene = function() {
       value: 4.0
     },
     u_speed: {
+      type: 'f',
+      value: 1.0
+    },
+    u_bump: {
       type: 'f',
       value: 1.0
     }
@@ -414,7 +422,7 @@ vert_simple = "varying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\nvoi
 frag_screen = "varying vec2 vUv;\nvarying vec3 vPos;\nvarying vec3 vNormal;\nuniform sampler2D texture;\nvoid main() {\n    gl_FragColor = texture2D(texture, vUv)*vNormal.z*vNormal.z;\n    gl_FragColor.a = 1.0;\n}";
 
 // ../shaders/fbm_02.frag
-frag_fbm_02 = "// Created by inigo quilez - iq/2014\n// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.\n\nvarying vec2 vUv;\nuniform vec2 u_mouse;\nuniform float u_time;\nuniform float u_scale;\nuniform float u_speed;\n\nuniform vec3 u_col1;\nuniform vec3 u_col2;\nuniform vec3 u_col3;\nuniform vec3 u_col4;\n\nuniform float u_fbm1;\nuniform float u_fbm2;\nuniform float u_fbm3;\nuniform float u_fbm4;\nuniform float u_fbm5;\nuniform float u_fbm6;\nuniform float u_fbm7;\nuniform float u_fbm8;\nuniform float u_fbm9;\n\nconst mat2 m = mat2( 0.80,  0.60, -0.60,  0.80 );\n\nfloat hash( vec2 p ) {\n	float h = dot(p,vec2(127.1,311.7));\n    return -1.0 + 2.0*fract(sin(h)*43758.5453123);\n}\n\nfloat noise( in vec2 p ) {\n    vec2 i = floor( p );\n    vec2 f = fract( p );\n	\n	vec2 u = f*f*(3.0-2.0*f);\n\n    return mix( mix( hash( i + vec2(0.0,0.0) ), \n                     hash( i + vec2(1.0,0.0) ), u.x),\n                mix( hash( i + vec2(0.0,1.0) ), \n                     hash( i + vec2(1.0,1.0) ), u.x), u.y);\n}\n\nfloat fbm( vec2 p ) {\n    float f = u_fbm1;\n    f += u_fbm2*noise( p ); p = m*p*u_fbm3;\n    f += u_fbm4*noise( p ); p = m*p*u_fbm5;\n    f += u_fbm6*noise( p ); p = m*p*u_fbm7;\n    f += u_fbm8*noise( p );\n    return f/u_fbm9;\n}\n\nvec2 fbm2( in vec2 p ) {\n    return vec2( fbm(p.xy), fbm(p.yx) );\n}\n\nvec3 map( vec2 p ) {   \n    p *= 0.7;\n\n    float f = dot( fbm2( \n        1.0*(0.05*u_time*u_speed+p+fbm2(-0.05*u_time*u_speed+2.0*(p+fbm2(4.0*p)))) ), \n        vec2(1.0,-1.0) );\n\n    float bl = smoothstep( -0.8, 0.8, f );\n\n    float ti = smoothstep( -1.0, 1.0, fbm(p) );\n\n    return mix( mix( u_col1, \n                     u_col2, ti ), \n                     u_col3, bl );\n}\n\nvoid main() {\n\n    vec2 p = vUv*2.0 - vec2(1.0);\n    p*=u_scale;\n    p.x-=u_time*0.05;\n    float e = 0.0045;\n\n    vec3 colc = map( p               ); float gc = dot(colc,vec3(0.333));\n    vec3 cola = map( p + vec2(e,0.0) ); float ga = dot(cola,vec3(0.333));\n    vec3 colb = map( p + vec2(0.0,e) ); float gb = dot(colb,vec3(0.333));\n    \n    vec3 nor = normalize( vec3(ga-gc, e, gb-gc ) );\n\n    vec3 col = colc;\n    col += u_col4*8.0*abs(2.0*gc-ga-gb);\n    //col *= 1.0+0.2*nor.y*nor.y;\n    //col += 0.05*nor.y*nor.y*nor.y;\n     \n    vec2 q = vUv;\n    col *= pow(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.1);\n    \n    gl_FragColor = vec4( col, 1.0 );\n}";
+frag_fbm_02 = "// Created by inigo quilez - iq/2014\n// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.\n\nvarying vec2 vUv;\nuniform vec2 u_mouse;\nuniform float u_time;\nuniform float u_scale;\nuniform float u_speed;\n\nuniform vec3 u_col1;\nuniform vec3 u_col2;\nuniform vec3 u_col3;\nuniform vec3 u_col4;\n\nuniform float u_bump;\n\nuniform float u_fbm1;\nuniform float u_fbm2;\nuniform float u_fbm3;\nuniform float u_fbm4;\nuniform float u_fbm5;\nuniform float u_fbm6;\nuniform float u_fbm7;\nuniform float u_fbm8;\nuniform float u_fbm9;\n\nconst mat2 m = mat2( 0.80,  0.60, -0.60,  0.80 );\n\nfloat hash( vec2 p ) {\n	float h = dot(p,vec2(127.1,311.7));\n    return -1.0 + 2.0*fract(sin(h)*43758.5453123);\n}\n\nfloat noise( in vec2 p ) {\n    vec2 i = floor( p );\n    vec2 f = fract( p );\n	\n	vec2 u = f*f*(3.0-2.0*f);\n\n    return mix( mix( hash( i + vec2(0.0,0.0) ), \n                     hash( i + vec2(1.0,0.0) ), u.x),\n                mix( hash( i + vec2(0.0,1.0) ), \n                     hash( i + vec2(1.0,1.0) ), u.x), u.y);\n}\n\nfloat fbm( vec2 p ) {\n    float f = u_fbm1;\n    f += u_fbm2*noise( p ); p = m*p*u_fbm3;\n    f += u_fbm4*noise( p ); p = m*p*u_fbm5;\n    f += u_fbm6*noise( p ); p = m*p*u_fbm7;\n    f += u_fbm8*noise( p );\n    return f/u_fbm9;\n}\n\nvec2 fbm2( in vec2 p ) {\n    return vec2( fbm(p.xy), fbm(p.yx) );\n}\n\nvec3 map( vec2 p ) {   \n    p *= 0.7;\n\n    float f = dot( fbm2( \n        1.0*(0.05*u_time*u_speed+p+fbm2(-0.05*u_time*u_speed+2.0*(p+fbm2(4.0*p)))) ), \n        vec2(1.0,-1.0) );\n\n    float bl = smoothstep( -0.8, 0.8, f );\n\n    float ti = smoothstep( -1.0, 1.0, fbm(p) );\n\n    return mix( mix( u_col1, \n                     u_col2, ti ), \n                     u_col3, bl );\n}\n\nvoid main() {\n\n    vec2 p = vUv*2.0 - vec2(1.0);\n    p*=u_scale;\n    p.x-=u_time*0.05;\n    float e = 0.0045;\n\n    vec3 colc = map( p               ); float gc = dot(colc,vec3(0.333));\n    vec3 cola = map( p + vec2(e,0.0) ); float ga = dot(cola,vec3(0.333));\n    vec3 colb = map( p + vec2(0.0,e) ); float gb = dot(colb,vec3(0.333));\n    \n    vec3 nor = normalize( vec3(ga-gc, e, gb-gc ) );\n\n    vec3 col = colc;\n    col += u_col4*8.0*abs(2.0*gc-ga-gb);\n    col *= 1.0+0.2*nor.y*nor.y;\n    col += 0.05*nor.y*nor.y*nor.y;\n     \n    vec2 q = vUv;\n    col *= pow(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.1);\n    \n    gl_FragColor = vec4(mix(colc, col, u_bump), 1.0 );\n}";
 
 rnd = function(r) {
   var x;
