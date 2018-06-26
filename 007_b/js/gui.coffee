@@ -40,7 +40,7 @@ init_gui = ->
     t = gui.addFolder "FBM"
     for i in [1..9]
         name = "u_fbm#{i}"
-        t.add(params, name, -2.0, 2.0, 0.001)
+        t.add(params, name, -2.0, 2.0, 0.00001)
         .onChange set_u name
        
     t = gui.addFolder "Shadow mat"
