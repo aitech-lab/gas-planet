@@ -1,0 +1,95 @@
+// Created by inigo quilez - iq/2014
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+
+varying vec2 vUv;
+uniform vec2 u_mouse;
+uniform float u_time;
+uniform float u_scale;
+uniform float u_speed;
+
+uniform vec3 u_col1;
+uniform vec3 u_col2;
+uniform vec3 u_col3;
+uniform vec3 u_col4;
+
+uniform float u_fbm1;
+uniform float u_fbm2;
+uniform float u_fbm3;
+uniform float u_fbm4;
+uniform float u_fbm5;
+uniform float u_fbm6;
+uniform float u_fbm7;
+uniform float u_fbm8;
+uniform float u_fbm9;
+
+const mat2 m = mat2( 0.80,  0.60, -0.60,  0.80 );
+
+float hash( vec2 p ) {
+	float h = dot(p,vec2(127.1,311.7));
+    return -1.0 + 2.0*fract(sin(h)*43758.5453123);
+}
+
+float noise( in vec2 p ) {
+    vec2 i = floor( p );
+    vec2 f = fract( p );
+	
+	vec2 u = f*f*(3.0-2.0*f);
+
+    return mix( mix( hash( i + vec2(0.0,0.0) ), 
+                     hash( i + vec2(1.0,0.0) ), u.x),
+                mix( hash( i + vec2(0.0,1.0) ), 
+                     hash( i + vec2(1.0,1.0) ), u.x), u.y);
+}
+
+float fbm( vec2 p ) {
+    float f = u_fbm1;
+    f += u_fbm2*noise( p ); p = m*p*u_fbm3;
+    f += u_fbm4*noise( p ); p = m*p*u_fbm5;
+    f += u_fbm6*noise( p ); p = m*p*u_fbm7;
+    f += u_fbm8*noise( p );
+    return f/u_fbm9;
+}
+
+vec2 fbm2( in vec2 p ) {
+    return vec2( fbm(p.xy), fbm(p.yx) );
+}
+
+vec3 map( vec2 p ) {   
+    p *= 0.7;
+
+    float f = dot( fbm2( 
+        1.0*(0.05*u_time*u_speed+p+fbm2(-0.05*u_time*u_speed+2.0*(p+fbm2(4.0*p)))) ), 
+        vec2(1.0,-1.0) );
+
+    float bl = smoothstep( -0.8, 0.8, f );
+
+    float ti = smoothstep( -1.0, 1.0, fbm(p) );
+
+    return mix( mix( u_col1, 
+                     u_col2, ti ), 
+                     u_col3, bl );
+}
+
+void main() {
+
+    vec2 p = vUv*2.0 - vec2(1.0);
+    p*=u_scale;
+    p.x-=u_time*0.05;
+    float e = 0.0045;
+
+    vec3 colc = map( p               ); float gc = dot(colc,vec3(0.333));
+    vec3 cola = map( p + vec2(e,0.0) ); float ga = dot(cola,vec3(0.333));
+    vec3 colb = map( p + vec2(0.0,e) ); float gb = dot(colb,vec3(0.333));
+    
+    vec3 nor = normalize( vec3(ga-gc, e, gb-gc ) );
+
+    vec3 col = colc;
+    col += u_col4*8.0*abs(2.0*gc-ga-gb);
+    //col *= 1.0+0.2*nor.y*nor.y;
+    //col += 0.05*nor.y*nor.y*nor.y;
+     
+    vec2 q = vUv;
+    col *= pow(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.1);
+    
+    gl_FragColor = vec4( col, 1.0 );
+}
